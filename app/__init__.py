@@ -1,4 +1,16 @@
-"""Application factory."""
+"""
+Application factory — nơi ba tầng MVC được lắp vào nhau.
+
+    Model      app/models    thực thể dữ liệu (ORM)
+               app/services  luật nghiệp vụ và truy vấn
+    View       app/templates giao diện Jinja2
+               app/static    CSS và JavaScript
+    Controller app/controllers  blueprint nhận request và điều phối
+
+Tầng machine learning (app/ml) đứng riêng, không thuộc tầng nào trong ba
+tầng trên: nó không biết gì về HTTP lẫn CSDL, chỉ nhận số vào và trả số ra.
+Chính nhờ vậy nó huấn luyện và kiểm thử được độc lập với ứng dụng web.
+"""
 import time
 
 from flask import Flask, g, jsonify, redirect, render_template, request, url_for
@@ -49,14 +61,14 @@ def create_app(env: str | None = None) -> Flask:
 
 
 def register_blueprints(app: Flask) -> None:
-    from app.api.routes import api_bp
-    from app.views.analytics import analytics_bp
-    from app.views.auth import auth_bp
-    from app.views.imports import imports_bp
-    from app.views.predictions import predictions_bp
-    from app.views.public import public_bp
-    from app.views.students import students_bp
-    from app.views.support import support_bp
+    from app.controllers.analytics import analytics_bp
+    from app.controllers.api import api_bp
+    from app.controllers.auth import auth_bp
+    from app.controllers.imports import imports_bp
+    from app.controllers.predictions import predictions_bp
+    from app.controllers.public import public_bp
+    from app.controllers.students import students_bp
+    from app.controllers.support import support_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
