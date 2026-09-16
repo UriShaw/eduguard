@@ -53,11 +53,13 @@ def register_blueprints(app: Flask) -> None:
     from app.views.auth import auth_bp
     from app.views.predictions import predictions_bp
     from app.views.students import students_bp
+    from app.views.support import support_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(students_bp)
     app.register_blueprint(predictions_bp)
     app.register_blueprint(analytics_bp)
+    app.register_blueprint(support_bp)
 
 
 def register_error_handlers(app: Flask) -> None:
