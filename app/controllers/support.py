@@ -10,7 +10,7 @@ from flask import (Blueprint, abort, flash, g, redirect, render_template,
                    request, url_for)
 from flask_login import current_user, login_required
 
-from app.forms.support import InterventionForm, MeetingForm
+from app.forms import InterventionForm, MeetingForm
 from app.security import student_required
 from app.services import support
 

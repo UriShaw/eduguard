@@ -15,8 +15,7 @@ from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
 from sklearn.tree import DecisionTreeClassifier
 
 from app.logging_setup import get_logger
-from app.ml.dataset import RANDOM_STATE, load_training_split
-from app.ml.pipeline import build_pipeline
+from app.ml.preprocessing import RANDOM_STATE, build_pipeline, load_training_split
 
 logger = get_logger("ml.training")
 

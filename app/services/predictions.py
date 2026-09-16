@@ -5,7 +5,7 @@ Tầng này nối model với CSDL: nhận bộ chỉ số, gọi model, kèm gi
 rồi ghi lại thành một dòng lịch sử.
 """
 from app.extensions import db
-from app.ml import explain, inference
+from app.ml import predictor
 from app.ml.features import RAW_FEATURES
 from app.models import Prediction, Student
 
@@ -28,8 +28,8 @@ def run(features: dict, with_explanation: bool = True) -> dict:
     """
     _require_features(features)
 
-    result = inference.predict(features)
-    result["factors"] = explain.top_factors(features) if with_explanation else []
+    result = predictor.predict(features)
+    result["factors"] = predictor.explain(features) if with_explanation else []
     return result
 
 
@@ -43,7 +43,7 @@ def run_and_save(student: Student, features: dict) -> Prediction:
     """
     _require_features(features)
 
-    result = inference.predict(features)
+    result = predictor.predict(features)
 
     record = Prediction(
         student_id=student.student_id,
@@ -51,7 +51,7 @@ def run_and_save(student: Student, features: dict) -> Prediction:
         risk_level=result["risk_level"],
         is_at_risk=result["is_at_risk"],
         model_version=result["model_version"],
-        shap_top_factors=explain.top_factors(features),
+        shap_top_factors=predictor.explain(features),
     )
     db.session.add(record)
     db.session.commit()

@@ -21,7 +21,7 @@ from datetime import date, datetime, timedelta
 
 from app import create_app
 from app.extensions import db
-from app.ml import explain, inference
+from app.ml import predictor
 from app.models import (AcademicResult, Attendance, Counselor, Intervention,
                         LearningInteraction, MeetingLog, Prediction, Student,
                         User)
@@ -229,8 +229,7 @@ def run(n_students: int = DEFAULT_STUDENTS, reset: bool = False) -> None:
 
         # Model được nạp một lần rồi giữ trong bộ nhớ; xoá cache phòng trường
         # hợp script chạy sau một lần huấn luyện lại trong cùng tiến trình.
-        inference.reset_cache()
-        explain.reset_cache()
+        predictor.reset_cache()
 
         print(f"Sinh dữ liệu cho {n_students} sinh viên (seed={SEED})…")
         lecturers = _seed_accounts()
@@ -306,7 +305,7 @@ def run(n_students: int = DEFAULT_STUDENTS, reset: bool = False) -> None:
                             ("gpa", "failed_subjects", "credits_completed", "attendance_rate",
                              "login_count", "assignment_submitted", "assignment_missing",
                              "forum_posts", "video_views", "learning_hours")}
-                result = inference.predict(features)
+                result = predictor.predict(features)
 
                 prediction = Prediction(
                     student_id=student.student_id,
@@ -314,7 +313,7 @@ def run(n_students: int = DEFAULT_STUDENTS, reset: bool = False) -> None:
                     risk_level=result["risk_level"],
                     is_at_risk=result["is_at_risk"],
                     model_version=result["model_version"],
-                    shap_top_factors=explain.top_factors(features),
+                    shap_top_factors=predictor.explain(features),
                     created_at=stamp + timedelta(hours=2))
                 db.session.add(prediction)
                 rows += 4

@@ -3,7 +3,7 @@ from flask import (Blueprint, abort, flash, g, redirect, render_template,
                    request, url_for)
 from flask_login import current_user, login_required
 
-from app.forms.prediction import PredictionForm
+from app.forms import PredictionForm
 from app.ml.registry import MISSING_MODEL_MESSAGE
 from app.security import staff_required, student_required
 from app.services import metrics, predictions, students

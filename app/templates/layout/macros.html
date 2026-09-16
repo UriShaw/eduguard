@@ -6,10 +6,15 @@
   thì cách hiển thị lỗi thống nhất và thêm ràng buộc mới chỉ phải sửa một nơi.
 #}
 
-{% macro field(f, cols=None, help=None, **attrs) %}
+{#
+  Jinja không cho khai báo **kwargs trong chữ ký macro. Chỉ cần nhắc tới biến
+  `kwargs` trong thân macro là macro tự nhận mọi tham số phụ — nhờ đó truyền
+  được step, min, max, autofocus... thẳng xuống thẻ input.
+#}
+{% macro field(f, cols=None, help=None) %}
     <div class="{{ 'col-' ~ cols if cols else 'mb-3' }}">
         {{ f.label(class_="form-label") }}
-        {{ f(class_="form-control" ~ (" is-invalid" if f.errors else ""), **attrs) }}
+        {{ f(class_="form-control" ~ (" is-invalid" if f.errors else ""), **kwargs) }}
         {% for error in f.errors %}
             <div class="invalid-feedback">{{ error }}</div>
         {% endfor %}

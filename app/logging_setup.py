@@ -15,6 +15,31 @@ import sys
 TEXT_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 
 
+def _force_utf8_console() -> None:
+    """
+    Ép stdout và stderr sang UTF-8.
+
+    Bắt buộc với dự án này: console Windows mặc định dùng bảng mã theo vùng
+    (cp1258 cho tiếng Việt), không mã hoá được đủ chữ có dấu. Mọi lời gọi
+    print hay log tiếng Việt sẽ ném UnicodeEncodeError và làm chết script —
+    đã gặp thật khi chạy huấn luyện model.
+
+    Đặt ở đây vì file này là nơi duy nhất trong dự án sở hữu luồng ra console,
+    và mọi tiến trình (ứng dụng web lẫn script) đều nạp nó.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        # reconfigure có từ Python 3.7; luồng bị chuyển hướng ra file hoặc ống
+        # dẫn có thể không có phương thức này, khi đó bỏ qua là đúng.
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
+_force_utf8_console()
+
+
 class JsonFormatter(logging.Formatter):
     """Mỗi dòng log là một object JSON, kèm mọi field truyền qua `extra=`."""
 

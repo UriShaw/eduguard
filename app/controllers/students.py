@@ -3,7 +3,7 @@ from flask import (Blueprint, flash, g, redirect, render_template, request,
                    url_for)
 from flask_login import current_user, login_required
 
-from app.forms.student import MetricsForm, StudentForm
+from app.forms import MetricsForm, StudentForm
 from app.security import admin_required, advisor_scope, student_required
 from app.services import latest, metrics, students
 

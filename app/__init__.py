@@ -13,7 +13,7 @@ Chính nhờ vậy nó huấn luyện và kiểm thử được độc lập v�
 """
 import time
 
-from flask import Flask, g, jsonify, redirect, render_template, request, url_for
+from flask import Flask, g, jsonify, render_template, request
 from flask_login import current_user
 from sqlalchemy import text
 
@@ -84,12 +84,6 @@ def register_error_handlers(app: Flask) -> None:
     def wants_json() -> bool:
         return request.path.startswith("/api/")
 
-    @app.errorhandler(401)
-    def unauthorized(_error):
-        if wants_json():
-            return jsonify({"success": False, "error": "Chưa đăng nhập"}), 401
-        return redirect(url_for("auth.login", next=request.path))
-
     @app.errorhandler(403)
     def forbidden(_error):
         # Ghi lại mọi lần bị chặn: một tài khoản liên tục đâm vào 403 ở nhiều
@@ -106,13 +100,22 @@ def register_error_handlers(app: Flask) -> None:
         )
         if wants_json():
             return jsonify({"success": False, "error": "Không có quyền truy cập"}), 403
-        return render_template("errors/403.html"), 403
+        return render_template(
+            "errors/error.html", code=403, icon="shield-lock",
+            heading="Bạn không có quyền truy cập trang này",
+            message="Giảng viên chỉ thao tác được trên sinh viên mình phụ trách, "
+                    "sinh viên chỉ xem được hồ sơ của chính mình.",
+        ), 403
 
     @app.errorhandler(404)
     def not_found(_error):
         if wants_json():
             return jsonify({"success": False, "error": "Không tìm thấy"}), 404
-        return render_template("errors/404.html"), 404
+        return render_template(
+            "errors/error.html", code=404, icon="question-circle",
+            heading="Không tìm thấy nội dung",
+            message="Đường dẫn không tồn tại, hoặc dữ liệu đã bị xoá.",
+        ), 404
 
     @app.errorhandler(500)
     def server_error(_error):
