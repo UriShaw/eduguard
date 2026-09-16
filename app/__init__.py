@@ -49,7 +49,9 @@ def create_app(env: str | None = None) -> Flask:
 
 
 def register_blueprints(app: Flask) -> None:
-    """Các blueprint được thêm dần theo từng tính năng."""
+    from app.views.auth import auth_bp
+
+    app.register_blueprint(auth_bp)
 
 
 def register_error_handlers(app: Flask) -> None:
