@@ -1,0 +1,13 @@
+{% extends "layout/public.html" %}
+{% block title %}Không đủ quyền{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <i class="bi bi-shield-lock" style="font-size: 3rem; color: var(--high);"></i>
+    <h1 class="h3 mt-3">403 — Bạn không có quyền truy cập trang này</h1>
+    <p class="text-muted">
+        Giảng viên chỉ thao tác được trên sinh viên mình phụ trách, sinh viên chỉ xem được hồ sơ của chính mình.
+    </p>
+    <a href="{{ url_for('public.home') }}" class="btn btn-primary mt-2">Về trang chủ</a>
+</div>
+{% endblock %}
