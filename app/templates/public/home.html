@@ -1,0 +1,227 @@
+{% extends "layout/public.html" %}
+{% from "layout/macros.html" import risk_badge, empty_row %}
+
+{% block title %}Trang chủ{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center gy-5">
+            <div class="col-lg-6">
+                <h1>Phát hiện sớm sinh viên có nguy cơ bỏ học</h1>
+                <p class="lead mt-3">
+                    Hệ thống phân tích kết quả học tập, chuyên cần và mức độ tương tác để chỉ ra
+                    những sinh viên cần được quan tâm — kèm lý do cụ thể, để cố vấn biết nên bắt đầu từ đâu.
+                </p>
+                <div class="d-flex flex-wrap gap-3 mt-4">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('students.index') if current_user.is_student() else url_for('analytics.dashboard') }}"
+                           class="btn btn-primary btn-lg px-4">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Vào hệ thống
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
+                        </a>
+                    {% endif %}
+                    <a href="#gioi-thieu" class="btn btn-outline-primary btn-lg px-4">Tìm hiểu thêm</a>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <svg viewBox="0 0 520 380" class="w-100" role="img"
+                     aria-label="Minh hoạ phân tích dữ liệu học tập">
+                    <defs>
+                        <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#EFF4FF"/>
+                            <stop offset="100%" stop-color="#DCE9FF"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="20" y="20" width="480" height="340" rx="20" fill="url(#panel)"/>
+
+                    <rect x="60" y="210" width="34" height="110" rx="6" fill="#004AC6"/>
+                    <rect x="108" y="170" width="34" height="150" rx="6" fill="#2563EB"/>
+                    <rect x="156" y="240" width="34" height="80" rx="6" fill="#006C49"/>
+                    <rect x="204" y="130" width="34" height="190" rx="6" fill="#BA1A1A"/>
+
+                    <polyline points="60,140 108,110 156,150 204,80 252,100" fill="none"
+                              stroke="#996100" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="252" cy="100" r="6" fill="#996100"/>
+
+                    <g stroke="#8AA7E0" stroke-width="2">
+                        <line x1="320" y1="110" x2="380" y2="80"/>
+                        <line x1="320" y1="110" x2="380" y2="140"/>
+                        <line x1="320" y1="170" x2="380" y2="80"/>
+                        <line x1="320" y1="170" x2="380" y2="140"/>
+                        <line x1="380" y1="80" x2="440" y2="110"/>
+                        <line x1="380" y1="140" x2="440" y2="110"/>
+                    </g>
+                    <circle cx="320" cy="110" r="9" fill="#004AC6"/>
+                    <circle cx="320" cy="170" r="9" fill="#004AC6"/>
+                    <circle cx="380" cy="80" r="9" fill="#2563EB"/>
+                    <circle cx="380" cy="140" r="9" fill="#2563EB"/>
+                    <circle cx="440" cy="110" r="11" fill="#BA1A1A"/>
+
+                    <circle cx="340" cy="260" r="42" fill="none" stroke="#004AC6" stroke-width="6"/>
+                    <line x1="371" y1="291" x2="412" y2="332" stroke="#004AC6" stroke-width="8" stroke-linecap="round"/>
+                    <polyline points="320,268 333,250 348,276 364,244" fill="none"
+                              stroke="#006C49" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+
+    <section class="py-5">
+        <div class="row g-3">
+            {% for label, value, css, icon in [
+                ('Tổng số sinh viên', summary.total_students, 'primary', 'people-fill'),
+                ('Nguy cơ cao', summary.high, 'high', 'exclamation-octagon-fill'),
+                ('Nguy cơ trung bình', summary.medium, 'medium', 'exclamation-triangle-fill'),
+                ('Nguy cơ thấp', summary.low, 'low', 'check-circle-fill')] %}
+                <div class="col-6 col-lg-3">
+                    <div class="card card-soft stat-card is-{{ css }} h-100">
+                        <div class="card-body">
+                            <i class="bi bi-{{ icon }} fs-3" style="color: var(--{{ css }});"></i>
+                            <div class="stat-value mt-2" style="color: var(--{{ css }});">{{ value }}</div>
+                            <div class="text-muted small">{{ label }}</div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="py-4">
+        <div class="row g-3">
+            <div class="col-lg-5">
+                <div class="card card-soft h-100">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">Tỷ lệ theo mức nguy cơ</h6>
+                        <canvas id="chart-risk-pie" height="240"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card card-soft h-100">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">Sinh viên nguy cơ cao theo lớp</h6>
+                        {% if can_see_names %}
+                            <canvas id="chart-by-class" height="240"></canvas>
+                        {% else %}
+                            <p class="text-muted small py-5 text-center mb-0">
+                                <i class="bi bi-lock me-1"></i>
+                                Số liệu theo từng lớp chỉ hiển thị cho cán bộ đã đăng nhập.
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5">
+        <h2 class="section-title">Hệ thống nhìn vào những gì</h2>
+        <p class="text-muted mb-4">
+            Model được huấn luyện trên dữ liệu học tập thật, và mỗi kết quả đều kèm danh sách
+            yếu tố đã ảnh hưởng tới nó.
+        </p>
+        <div class="row g-3">
+            {% for icon, title, text, planned in [
+                ('mortarboard-fill', 'Kết quả học tập', 'Điểm trung bình tích luỹ và số môn bị trượt trong kỳ.', false),
+                ('calendar-check-fill', 'Tỷ lệ chuyên cần', 'Tỷ lệ buổi có mặt trên tổng số buổi trong kỳ theo dõi.', false),
+                ('award-fill', 'Tiến độ tín chỉ', 'Số tín chỉ đã tích luỹ so với tiến độ chương trình đào tạo.', false),
+                ('graph-up-arrow', 'Tương tác học tập', 'Đăng nhập, bài tập nộp và thiếu, bài đăng diễn đàn, lượt xem bài giảng.', false),
+                ('cash-coin', 'Tình trạng học phí', 'Chưa được đưa vào model vì hệ thống chưa có nguồn dữ liệu này.', true),
+                ('people-fill', 'Hoàn cảnh gia đình', 'Chưa được đưa vào model vì hệ thống chưa có nguồn dữ liệu này.', true)] %}
+                <div class="col-md-4">
+                    <div class="feature-card {{ 'is-planned' if planned }}">
+                        <i class="bi bi-{{ icon }}"></i>
+                        <h6 class="fw-bold mb-1">{{ title }}</h6>
+                        <p class="text-muted small mb-0">{{ text }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="py-5" id="canh-bao">
+        <h2 class="section-title mb-3">Sinh viên cần quan tâm nhất</h2>
+
+        {% if can_see_names %}
+            <div class="card card-soft">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã SV</th><th>Họ và tên</th><th>Lớp</th>
+                                <th class="text-end">GPA</th><th>Mức nguy cơ</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in at_risk_students %}
+                                <tr>
+                                    <td class="fw-semibold">{{ s.student_code }}</td>
+                                    <td>{{ s.full_name }}</td>
+                                    <td>{{ s.class_name }}</td>
+                                    <td class="text-end">{{ '%.2f'|format(s.gpa) if s.gpa is not none else '—' }}</td>
+                                    <td>{{ risk_badge(s.risk_level, s.probability) }}</td>
+                                    <td class="text-end">
+                                        <a href="{{ url_for('students.detail', student_id=s.student_id) }}"
+                                           class="btn btn-sm btn-outline-primary">Xem hồ sơ</a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                {{ empty_row(6, 'Hiện không có sinh viên nào ở mức nguy cơ cao.') }}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="card card-soft">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-lock fs-3 text-muted"></i>
+                    <p class="text-muted mt-3 mb-3">
+                        Danh sách này chứa họ tên và kết quả học tập của từng sinh viên nên chỉ
+                        hiển thị cho cán bộ đã đăng nhập.
+                    </p>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Đăng nhập để xem</a>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="py-5" id="gioi-thieu">
+        <div class="row">
+            <div class="col-lg-8">
+                <h2 class="section-title">Về hệ thống</h2>
+                <p class="text-muted">
+                    EduGuard AI hỗ trợ cố vấn học tập phát hiện sớm sinh viên có nguy cơ bỏ học, dựa trên
+                    mô hình học máy huấn luyện từ dữ liệu kết quả học tập, chuyên cần và tương tác.
+                    Mỗi kết quả đi kèm giải thích cho biết yếu tố nào đã đẩy nguy cơ lên và yếu tố nào
+                    đang kéo xuống, để cố vấn không chỉ biết <em>ai</em> cần giúp mà còn biết
+                    <em>giúp từ đâu</em>.
+                </p>
+                <p class="text-muted mb-0">
+                    Kết quả dự đoán là căn cứ để bắt đầu một cuộc trò chuyện, không phải một phán quyết.
+                    Model học từ dữ liệu quá khứ nên có thể sai, và mọi quyết định cuối cùng vẫn thuộc về con người.
+                </p>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    EduGuardCharts.loadHome("{{ url_for('public.home_chart_data') }}");
+</script>
+{% endblock %}
