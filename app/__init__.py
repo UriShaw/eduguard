@@ -49,6 +49,7 @@ def create_app(env: str | None = None) -> Flask:
 
 
 def register_blueprints(app: Flask) -> None:
+    from app.views.analytics import analytics_bp
     from app.views.auth import auth_bp
     from app.views.predictions import predictions_bp
     from app.views.students import students_bp
@@ -56,6 +57,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(auth_bp)
     app.register_blueprint(students_bp)
     app.register_blueprint(predictions_bp)
+    app.register_blueprint(analytics_bp)
 
 
 def register_error_handlers(app: Flask) -> None:

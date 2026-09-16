@@ -74,7 +74,7 @@
 
                 {% if not current_user.is_student() %}
                     {{ nav_item('predictions.new', 'graph-up-arrow', 'Dự đoán', prefix='predictions.') }}
-                    {{ nav_item('analytics.reports', 'file-earmark-excel', 'Báo cáo') }}
+                    {{ nav_item('analytics.reports_page', 'file-earmark-excel', 'Báo cáo') }}
                     {{ nav_item('imports.metrics', 'upload', 'Nhập dữ liệu', prefix='imports.') }}
                 {% endif %}
             </ul>

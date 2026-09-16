@@ -1,0 +1,96 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Dashboard</h1>
+        <p class="text-muted mb-0">
+            {% if current_user.is_admin() %}
+                Tổng quan nguy cơ bỏ học toàn hệ thống
+            {% else %}
+                Tổng quan sinh viên do bạn phụ trách
+            {% endif %}
+        </p>
+    </div>
+    <a href="{{ url_for('predictions.new') }}" class="btn btn-primary">
+        <i class="bi bi-cpu me-1"></i> Dự đoán nhanh
+    </a>
+</div>
+
+<div class="row row-cols-2 row-cols-lg-5 g-3 mb-3">
+    <div class="col">
+        <div class="card card-soft stat-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Tổng số sinh viên</div>
+                <div class="stat-value">{{ stats.total_students }}</div>
+            </div>
+        </div>
+    </div>
+    {% for level, css in [('Thấp', 'low'), ('Trung bình', 'medium'), ('Cao', 'high'), ('Rất cao', 'critical')] %}
+        <div class="col">
+            <div class="card card-soft stat-card is-{{ css }} h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Nguy cơ {{ level|lower }}</div>
+                    <div class="stat-value" style="color: var(--{{ css }});">
+                        {{ stats.risk_distribution[level] }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<p class="text-muted small mb-4">
+    Đã dự đoán <strong>{{ stats.students_predicted }}</strong> sinh viên,
+    còn <strong>{{ stats.students_not_predicted }}</strong> chưa có kết quả nào.
+    {% if stats.students_not_predicted %}
+        Sinh viên chưa dự đoán không xuất hiện trong bất kỳ biểu đồ nào bên dưới.
+    {% endif %}
+</p>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card card-soft h-100">
+            <div class="card-body">
+                <h6 class="card-title">Phân bố mức nguy cơ</h6>
+                <canvas id="chart-risk-pie" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card card-soft h-100">
+            <div class="card-body">
+                <h6 class="card-title">Sinh viên nguy cơ cao theo lớp</h6>
+                <canvas id="chart-by-class" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card card-soft h-100">
+            <div class="card-body">
+                <h6 class="card-title">GPA và xác suất bỏ học</h6>
+                <canvas id="chart-gpa" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card card-soft h-100">
+            <div class="card-body">
+                <h6 class="card-title">Chuyên cần và xác suất bỏ học</h6>
+                <canvas id="chart-attendance" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    EduGuardCharts.loadDashboard("{{ url_for('analytics.chart_data') }}");
+</script>
+{% endblock %}
