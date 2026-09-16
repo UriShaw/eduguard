@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Cấu hình chứa mật khẩu — KHÔNG commit
+.env
+
+# Model đã train (sinh lại bằng: python -m scripts.train_model)
+models/
+
+# Log, báo cáo sinh tự động
+logs/
+reports/figures/
+
+# Kiểm thử
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
