@@ -1,0 +1,82 @@
+{% extends "layout/base.html" %}
+{% from "layout/macros.html" import field %}
+
+{% block title %}Nhập chỉ số{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-1">Nhập chỉ số học tập</h1>
+        <p class="text-muted mb-0">{{ student.student_code }} — {{ student.full_name }}</p>
+    </div>
+    <a href="{{ url_for('students.detail', student_id=student.student_id) }}"
+       class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Về hồ sơ
+    </a>
+</div>
+
+<div class="alert alert-light border small">
+    <i class="bi bi-info-circle me-1"></i>
+    Mỗi lần lưu tạo một bản ghi mới, không ghi đè dữ liệu cũ — lịch sử chỉ số chính là
+    thứ cho thấy sinh viên đang tiến bộ hay đi xuống. Bộ chỉ số mới nhất sẽ được dùng để
+    điền sẵn biểu mẫu dự đoán.
+</div>
+
+<form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card card-soft h-100">
+                <div class="card-body">
+                    <fieldset>
+                        <legend>Kết quả học tập</legend>
+                        {{ field(form.semester) }}
+                        {{ field(form.gpa, step="0.01", min="0", max="10") }}
+                        {{ field(form.failed_subjects, min="0") }}
+                        {{ field(form.credits_completed, min="0",
+                                 help="Tổng tín chỉ đã tích luỹ từ đầu khoá, không phải riêng kỳ này.") }}
+                        {{ field(form.credits_registered, min="0") }}
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card card-soft h-100">
+                <div class="card-body">
+                    <fieldset>
+                        <legend>Chuyên cần</legend>
+                        {{ field(form.attendance_rate, step="0.1", min="0", max="100",
+                                 help="Phần trăm số buổi có mặt trên tổng số buổi.") }}
+                        {{ field(form.total_sessions, min="0") }}
+                        {{ field(form.absent_sessions, min="0") }}
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card card-soft h-100">
+                <div class="card-body">
+                    <fieldset>
+                        <legend>Tương tác học tập</legend>
+                        <div class="row">
+                            {{ field(form.login_count, cols="6", min="0") }}
+                            {{ field(form.learning_hours, cols="6", step="0.1", min="0") }}
+                            {{ field(form.assignment_submitted, cols="6", min="0") }}
+                            {{ field(form.assignment_missing, cols="6", min="0") }}
+                            {{ field(form.forum_posts, cols="6", min="0") }}
+                            {{ field(form.video_views, cols="6", min="0") }}
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg mt-4 px-5">
+        <i class="bi bi-save me-1"></i> Lưu chỉ số
+    </button>
+</form>
+{% endblock %}

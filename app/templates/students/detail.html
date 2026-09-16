@@ -1,0 +1,131 @@
+{% extends "layout/base.html" %}
+{% from "layout/macros.html" import risk_badge, student_status, empty_row %}
+
+{% block title %}{{ student.full_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">{{ student.full_name }}</h1>
+        <p class="text-muted mb-0">
+            {{ student.student_code }}
+            {% if student.class_name %}• {{ student.class_name }}{% endif %}
+            {% if student.major %}• {{ student.major }}{% endif %}
+            • {{ student_status(student.status) }}
+        </p>
+    </div>
+    {% if can_edit %}
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('students.record_metrics', student_id=student.student_id) }}"
+               class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-clipboard-data me-1"></i> Nhập chỉ số
+            </a>
+            {% if current_user.is_admin() %}
+                <a href="{{ url_for('students.edit', student_id=student.student_id) }}"
+                   class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-pencil me-1"></i> Sửa hồ sơ
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<div class="row g-3">
+
+    <div class="col-lg-4">
+        <div class="card card-soft h-100">
+            <div class="card-body">
+                <h6 class="card-title mb-3">Thông tin liên hệ</h6>
+                <dl class="row small mb-0">
+                    <dt class="col-5 text-muted fw-normal">Email</dt>
+                    <dd class="col-7">{{ student.email or '—' }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Điện thoại</dt>
+                    <dd class="col-7">{{ student.phone or '—' }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Năm nhập học</dt>
+                    <dd class="col-7">{{ student.enrollment_year or '—' }}</dd>
+
+                    <dt class="col-5 text-muted fw-normal">Giảng viên phụ trách</dt>
+                    <dd class="col-7 mb-0">{{ student.advisor.full_name if student.advisor else '— Chưa gán —' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card card-soft h-100">
+            <div class="card-body">
+                <h6 class="card-title mb-3">Kết quả học tập theo học kỳ</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Học kỳ</th>
+                                <th class="text-end">GPA</th>
+                                <th class="text-end">Môn trượt</th>
+                                <th class="text-end">Tín chỉ tích luỹ</th>
+                                <th class="text-end">Chuyên cần</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in history.academic %}
+                                {# Ghép chuyên cần theo vị trí: mỗi lần nhập chỉ số ghi đồng thời
+                                   một dòng học tập và một dòng chuyên cần, nên hai danh sách
+                                   cùng thứ tự và cùng độ dài. #}
+                                {% set attendance = history.attendance[loop.index0] if loop.index0 < history.attendance|length else None %}
+                                <tr>
+                                    <td>{{ row.semester }}</td>
+                                    <td class="text-end fw-semibold">{{ '%.2f'|format(row.gpa) }}</td>
+                                    <td class="text-end">{{ row.failed_subjects }}</td>
+                                    <td class="text-end">{{ row.credits_completed }}</td>
+                                    <td class="text-end">
+                                        {{ '%.1f%%'|format(attendance.attendance_rate) if attendance else '—' }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                {{ empty_row(5, 'Chưa có dữ liệu học tập nào được nhập.') }}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card card-soft">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="card-title mb-0">Lịch sử dự đoán</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Thời điểm</th>
+                                <th>Mức nguy cơ</th>
+                                <th class="text-end">Xác suất</th>
+                                <th>Phiên bản model</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in predictions %}
+                                <tr>
+                                    <td>{{ p.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ risk_badge(p.risk_level) }}</td>
+                                    <td class="text-end">{{ p.probability|percent }}</td>
+                                    <td><span class="text-muted small">{{ p.model_version }}</span></td>
+                                </tr>
+                            {% else %}
+                                {{ empty_row(4, 'Sinh viên chưa được chạy dự đoán lần nào.') }}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

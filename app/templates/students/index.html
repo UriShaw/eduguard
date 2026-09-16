@@ -1,0 +1,117 @@
+{% extends "layout/base.html" %}
+{% from "layout/macros.html" import risk_badge, student_status, paginate, empty_row %}
+
+{% block title %}Sinh viên{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-1">Sinh viên</h1>
+        <p class="text-muted mb-0">
+            {{ pagination.total }} sinh viên
+            {% if not current_user.is_admin() %}do bạn phụ trách{% endif %}
+        </p>
+    </div>
+    {% if current_user.is_admin() %}
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('imports.students') }}" class="btn btn-outline-primary">
+                <i class="bi bi-upload me-1"></i> Nhập hàng loạt
+            </a>
+            <a href="{{ url_for('students.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Thêm sinh viên
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input type="text" name="keyword" class="form-control"
+               placeholder="Tìm theo mã sinh viên hoặc họ tên…" value="{{ filters.keyword }}">
+    </div>
+    <div class="col-md-3">
+        <select name="class_name" class="form-select">
+            <option value="">— Tất cả các lớp —</option>
+            {% for c in classes %}
+                <option value="{{ c }}" {{ 'selected' if filters.class_name == c }}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">— Tất cả trạng thái —</option>
+            <option value="active" {{ 'selected' if filters.status == 'active' }}>Đang học</option>
+            <option value="dropped" {{ 'selected' if filters.status == 'dropped' }}>Đã nghỉ</option>
+            <option value="graduated" {{ 'selected' if filters.status == 'graduated' }}>Đã tốt nghiệp</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-outline-primary w-100">
+            <i class="bi bi-search me-1"></i> Lọc
+        </button>
+    </div>
+</form>
+
+<div class="card card-soft">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã SV</th>
+                    <th>Họ và tên</th>
+                    <th>Lớp</th>
+                    <th class="text-end">GPA</th>
+                    <th class="text-end">Chuyên cần</th>
+                    <th>Trạng thái</th>
+                    <th>Nguy cơ gần nhất</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in pagination.items %}
+                    {% set academic = overview.academic.get(s.student_id) %}
+                    {% set attendance = overview.attendance.get(s.student_id) %}
+                    {% set prediction = overview.prediction.get(s.student_id) %}
+                    <tr>
+                        <td class="fw-semibold">{{ s.student_code }}</td>
+                        <td>{{ s.full_name }}</td>
+                        <td>{{ s.class_name or '—' }}</td>
+                        <td class="text-end">{{ '%.2f'|format(academic.gpa) if academic else '—' }}</td>
+                        <td class="text-end">
+                            {{ '%.0f%%'|format(attendance.attendance_rate) if attendance else '—' }}
+                        </td>
+                        <td>{{ student_status(s.status) }}</td>
+                        <td>
+                            {% if prediction %}
+                                {{ risk_badge(prediction.risk_level, prediction.probability) }}
+                            {% else %}
+                                {{ risk_badge(None) }}
+                            {% endif %}
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a href="{{ url_for('students.detail', student_id=s.student_id) }}"
+                               class="btn btn-sm btn-outline-secondary" title="Xem hồ sơ">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('students.record_metrics', student_id=s.student_id) }}"
+                               class="btn btn-sm btn-outline-secondary" title="Nhập chỉ số">
+                                <i class="bi bi-clipboard-data"></i>
+                            </a>
+                            {% if current_user.is_admin() %}
+                                <a href="{{ url_for('students.edit', student_id=s.student_id) }}"
+                                   class="btn btn-sm btn-outline-secondary" title="Sửa hồ sơ">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    {{ empty_row(8, 'Không có sinh viên nào khớp bộ lọc.') }}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{ paginate(pagination, 'students.index', filters) }}
+{% endblock %}

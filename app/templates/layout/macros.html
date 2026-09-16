@@ -71,7 +71,7 @@
 
   `args` là các tham số lọc cần giữ lại khi chuyển trang (từ khoá tìm kiếm...).
 #}
-{% macro pagination(page_obj, endpoint, args={}, window=2) %}
+{% macro paginate(page_obj, endpoint, args={}, window=2) %}
     {% if page_obj and page_obj.pages > 1 %}
         <nav class="mt-3">
             <ul class="pagination justify-content-center mb-0">
