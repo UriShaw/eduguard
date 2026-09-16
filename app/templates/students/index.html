@@ -97,12 +97,20 @@
                                class="btn btn-sm btn-outline-secondary" title="Nhập chỉ số">
                                 <i class="bi bi-clipboard-data"></i>
                             </a>
+                            <a href="{{ url_for('predictions.history', student_id=s.student_id) }}"
+                               class="btn btn-sm btn-outline-secondary" title="Lịch sử dự đoán">
+                                <i class="bi bi-clock-history"></i>
+                            </a>
                             {% if current_user.is_admin() %}
                                 <a href="{{ url_for('students.edit', student_id=s.student_id) }}"
                                    class="btn btn-sm btn-outline-secondary" title="Sửa hồ sơ">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                             {% endif %}
+                            <a href="{{ url_for('predictions.for_student', student_id=s.student_id) }}"
+                               class="btn btn-sm btn-primary" title="Chạy dự đoán">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </a>
                         </td>
                     </tr>
                 {% else %}
