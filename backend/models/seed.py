@@ -183,14 +183,16 @@ def run(n_students: int = 500, reset: bool = False) -> None:
             if not p or p.risk_level not in ml.AT_RISK_LEVELS or rng.random() > 0.7:
                 continue
             counselor = rng.choice(counselors)
-            day = date(2026, 3, 1) + timedelta(days=rng.randint(0, 150))
+            # Mốc thời gian tính từ HÔM NAY chứ không cố định: ngày cố định sẽ trôi về quá khứ
+            # và biến gần như mọi việc thành quá hạn, làm trang Cảnh báo sớm ngập nhiễu.
+            day = date.today() - timedelta(days=rng.randint(3, 45))
             db.add(MeetingLog(student_id=s.student_id, counselor_id=counselor.counselor_id, meeting_date=day,
                               meeting_type=rng.choice(["academic_counseling", "personal_check_in",
                                                        "parental_outreach"]),
                               duration_minutes=rng.choice([30, 45, 60]), notes=rng.choice(NOTES)))
             for suggestion in suggest_interventions(p.shap_top_factors)[:2]:
                 status = rng.choices(["not_started", "in_progress", "completed"], [0.35, 0.4, 0.25])[0]
-                due = day + timedelta(days=rng.randint(10, 60))
+                due = day + timedelta(days=rng.randint(14, 45))
                 db.add(Intervention(student_id=s.student_id, prediction_id=p.prediction_id,
                                     counselor_id=counselor.counselor_id, category=suggestion["category"],
                                     title=suggestion["title"], description=suggestion["description"],
