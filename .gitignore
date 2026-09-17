@@ -2,25 +2,23 @@
 __pycache__/
 *.py[cod]
 .venv/
-venv/
-*.egg-info/
+.pytest_cache/
 
 # Cấu hình chứa mật khẩu — KHÔNG commit
 .env
+.env.local
 
-# Model đã train (sinh lại bằng: python -m scripts.train_model)
-models/
+# Model đã huấn luyện (sinh lại bằng: python main.py train)
+backend/models/trained_model.joblib
 
-# Log, báo cáo sinh tự động
-logs/
-reports/figures/
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
 
-# Kiểm thử
-.pytest_cache/
-.coverage
-htmlcov/
-
-# IDE / OS
+# IDE / hệ điều hành
 .vscode/
 .idea/
 Thumbs.db

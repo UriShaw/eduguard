@@ -1,0 +1,25 @@
+# ===== API =====
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+python-multipart==0.0.20
+pydantic[email]==2.11.4
+PyJWT==2.10.1
+pwdlib[argon2]==0.2.1
+python-dotenv==1.1.0
+
+# ===== MySQL =====
+SQLAlchemy==2.0.40
+PyMySQL==1.1.1
+cryptography==44.0.3
+
+# ===== Dữ liệu và machine learning =====
+pandas==2.2.3
+numpy==1.26.4
+openpyxl==3.1.5
+scikit-learn==1.5.2
+joblib==1.4.2
+shap==0.46.0
+
+# ===== Kiểm thử =====
+pytest==8.3.5
+httpx==0.28.1
