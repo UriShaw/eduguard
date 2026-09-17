@@ -2,8 +2,10 @@
 EduGuard AI — backend FastAPI, điểm vào duy nhất.
 
 Kiến trúc MVC:
-    models/       M  thực thể, nghiệp vụ, thống kê, machine learning, schema.sql
+    models/       M  dữ liệu: kết nối CSDL, thực thể ORM, lược đồ vào/ra
+    services/     M  nghiệp vụ: sinh viên, dự đoán, thống kê, báo cáo, machine learning
     controllers/  C  route API, xác thực, phân quyền
+    data/            lược đồ MySQL, dữ liệu huấn luyện, sinh dữ liệu mẫu
     ../frontend/  V  giao diện Next.js
 
 Cách dùng (trong thư mục backend, đã kích hoạt môi trường ảo):
@@ -68,7 +70,7 @@ def main() -> None:
         uvicorn.run("main:app", host="127.0.0.1", port=args.port, reload=args.reload)
 
     elif args.command == "train":
-        from models import ml
+        from services import ml
 
         report = ml.train_and_save()
         print("\nSo sánh trên tập test:\n", report["table"].to_string(), sep="")
@@ -79,15 +81,16 @@ def main() -> None:
             print("CẢNH BÁO: recall dưới 0.70 — model bỏ sót hơn 30% sinh viên thực sự có nguy cơ.")
 
     elif args.command == "seed":
-        from models.seed import run
+        from data.seed import run
 
         run(args.students, args.reset)
 
     elif args.command == "predict-all":
-        from models import SessionLocal, services
+        from models import SessionLocal
+        from services import predictions
 
         with SessionLocal() as db:
-            result = services.predict_outdated(db)
+            result = predictions.predict_outdated(db)
         print(f"Đã dự đoán {result['predicted']} sinh viên, {result['up_to_date']} đã cập nhật, "
               f"bỏ qua {result['skipped']} sinh viên thiếu chỉ số.")
 

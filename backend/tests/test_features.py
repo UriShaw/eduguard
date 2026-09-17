@@ -5,9 +5,9 @@ from io import BytesIO
 import pandas as pd
 import pytest
 
-from models import Intervention, Prediction, Student, User, analytics, ml, services
+from models import Intervention, Prediction, Student, User
+from services import ServiceError, analytics, ml, predictions, reports, students
 from tests.conftest import FEATURES, METRICS, login, sid
-
 
 # ===== Machine learning =====
 
@@ -50,18 +50,18 @@ def _student(db, code="SV001") -> Student:
 
 
 def test_khong_tao_duoc_ma_trung(db):
-    with pytest.raises(services.ServiceError):
-        services.save_student(db, {"student_code": "SV001", "full_name": "Trùng"})
+    with pytest.raises(ServiceError):
+        students.save_student(db, {"student_code": "SV001", "full_name": "Trùng"})
 
 
 def test_email_rong_thanh_null(db):
-    a = services.save_student(db, {"student_code": "X1", "full_name": "A", "email": ""})
-    b = services.save_student(db, {"student_code": "X2", "full_name": "B", "email": ""})
+    a = students.save_student(db, {"student_code": "X1", "full_name": "A", "email": ""})
+    b = students.save_student(db, {"student_code": "X2", "full_name": "B", "email": ""})
     assert a.email is None and b.email is None
 
 
 def test_chi_so_thieu_tra_none_chu_khong_bia(db):
-    assert all(v is None for v in services.latest_features(_student(db)).values())
+    assert all(v is None for v in students.latest_features(_student(db)).values())
 
 
 def test_so_buoi_vang_khong_vuot_tong(client, db):
@@ -77,10 +77,10 @@ def test_gia_tri_0_hop_le(client, db):
 
 
 def test_doi_trang_thai_dong_bo_moc_hoan_thanh(db):
-    item = services.add_intervention(db, _student(db), {"title": "Phụ đạo"})
-    services.set_intervention_status(db, item, "completed")
+    item = students.add_intervention(db, _student(db), {"title": "Phụ đạo"})
+    students.set_intervention_status(db, item, "completed")
     assert item.completed_at is not None
-    services.set_intervention_status(db, item, "in_progress")
+    students.set_intervention_status(db, item, "in_progress")
     assert item.completed_at is None
 
 
@@ -88,11 +88,11 @@ def test_doi_trang_thai_dong_bo_moc_hoan_thanh(db):
 
 def test_hang_loat_chi_du_doan_sinh_vien_co_chi_so_moi(db):
     student = _student(db)
-    services.record_metrics(db, student, METRICS)
+    students.record_metrics(db, student, METRICS)
 
-    assert services.predict_outdated(db)["predicted"] == 1
+    assert predictions.predict_outdated(db)["predicted"] == 1
     # Chạy lại ngay: chỉ số không đổi nên không nhân bản lịch sử.
-    second = services.predict_outdated(db)
+    second = predictions.predict_outdated(db)
     assert second["predicted"] == 0 and second["up_to_date"] == 1
     assert db.query(Prediction).count() == 1
 
@@ -120,13 +120,13 @@ def test_canh_bao_sinh_vien_xau_di_nhanh(db):
 def test_canh_bao_nguy_co_cao_chua_co_ke_hoach(db):
     _predict(db, "SV001", 0.9, days_ago=1)
     _predict(db, "SV002", 0.9, days_ago=1)
-    services.add_intervention(db, _student(db, "SV002"), {"title": "Đã có kế hoạch"})
+    students.add_intervention(db, _student(db, "SV002"), {"title": "Đã có kế hoạch"})
 
     assert [a["student_code"] for a in analytics.alerts(db, None)["unplanned"]] == ["SV001"]
 
 
 def test_canh_bao_viec_qua_han(db):
-    services.add_intervention(db, _student(db), {"title": "Trễ", "due_date": date.today() - timedelta(days=3)})
+    students.add_intervention(db, _student(db), {"title": "Trễ", "due_date": date.today() - timedelta(days=3)})
     overdue = analytics.alerts(db, None)["overdue"]
     assert overdue[0]["days_overdue"] == 3
 
@@ -143,26 +143,26 @@ def test_thong_ke_chi_tinh_lan_du_doan_gan_nhat(db):
 def test_goi_y_theo_yeu_to_lam_tang_nguy_co():
     factors = [{"feature": "attendance_rate", "label": "Chuyên cần", "effect": "increase"},
                {"feature": "gpa", "label": "GPA", "effect": "decrease"}]
-    suggestions = services.suggest_interventions(factors)
+    suggestions = predictions.suggest_interventions(factors)
     assert [s["category"] for s in suggestions] == ["parental_outreach"]
 
 
 def test_goi_y_bo_qua_loai_viec_dang_mo():
     factors = [{"feature": "attendance_rate", "effect": "increase"}]
     existing = [Intervention(category="parental_outreach", status="in_progress", title="x")]
-    assert services.suggest_interventions(factors, existing) == []
+    assert predictions.suggest_interventions(factors, existing) == []
 
 
 # ===== Mô phỏng =====
 
 def test_mo_phong_tang_chuyen_can_giam_nguy_co():
     base = {**FEATURES, "attendance_rate": 50}
-    result = services.simulate(base, {"attendance_rate": 95})
+    result = predictions.simulate(base, {"attendance_rate": 95})
     assert result["delta"] < 0
 
 
 def test_mo_phong_canh_bao_gia_tri_ngoai_vung_da_hoc():
-    result = services.simulate(FEATURES, {"login_count": 500})
+    result = predictions.simulate(FEATURES, {"login_count": 500})
     assert "Số lần đăng nhập" in result["outside_training_range"]
 
 
@@ -173,7 +173,7 @@ def _frame(rows):
 
 
 def test_nhap_sinh_vien_khong_ghi_de_va_bat_trung_trong_file(db):
-    result = analytics.import_students(db, _frame([
+    result = reports.import_students(db, _frame([
         {"student_code": "SV001", "full_name": "Ghi đè"},
         {"student_code": "SV900", "full_name": "Mới"},
         {"student_code": "SV900", "full_name": "Lặp"},
@@ -184,7 +184,7 @@ def test_nhap_sinh_vien_khong_ghi_de_va_bat_trung_trong_file(db):
 
 def test_giang_vien_nhap_chi_so_nguoi_khac_bao_loi_tung_dong(db):
     lecturer = db.query(User).filter_by(username="gv_a").one()
-    result = analytics.import_metrics(db, _frame([
+    result = reports.import_metrics(db, _frame([
         {"student_code": "SV001", "semester": "2025.1", "gpa": 7, "attendance_rate": 80},
         {"student_code": "SV002", "semester": "2025.1", "gpa": 7, "attendance_rate": 80},
     ]), lecturer)

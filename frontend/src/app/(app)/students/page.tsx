@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RISK_LEVELS, STATUS_LABELS, useApi, type Options, type Page, type StudentRow } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 const ALL = "all";
 

@@ -15,9 +15,20 @@ from datetime import date, datetime, timedelta
 
 from sqlalchemy import delete, func, select
 
-from models import (AcademicResult, Attendance, Counselor, Intervention, LearningInteraction,
-                    MeetingLog, Prediction, SessionLocal, Student, User, ml)
-from models.services import suggest_interventions
+from models import (
+    AcademicResult,
+    Attendance,
+    Counselor,
+    Intervention,
+    LearningInteraction,
+    MeetingLog,
+    Prediction,
+    SessionLocal,
+    Student,
+    User,
+)
+from services import ml
+from services.predictions import suggest_interventions
 
 SEED = 42
 SEMESTERS = [("2024.2", date(2025, 1, 6), date(2025, 5, 30)),

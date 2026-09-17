@@ -6,10 +6,10 @@ __pycache__/
 
 # Cấu hình chứa mật khẩu — KHÔNG commit
 .env
-.env.local
+.env*.local
 
 # Model đã huấn luyện (sinh lại bằng: python main.py train)
-backend/models/trained_model.joblib
+backend/data/trained_model.joblib
 
 # Node / Next.js
 node_modules/

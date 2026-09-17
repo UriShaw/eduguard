@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 import type { RiskLevel } from "@/lib/api";
 
 /** Mỗi mức nguy cơ một màu, lấy từ biến CSS trong globals.css — nhãn, biểu đồ, thước đo dùng chung. */

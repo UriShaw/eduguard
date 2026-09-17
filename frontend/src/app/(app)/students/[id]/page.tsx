@@ -29,7 +29,7 @@ import {
   api, formatDate, STATUS_LABELS, useApi, type Features, type Intervention, type InterventionStatus, type Prediction,
   type StudentDetail,
 } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 const NEXT_STATUS: Partial<Record<InterventionStatus, { to: InterventionStatus; label: string }>> = {
   not_started: { to: "in_progress", label: "Bắt đầu" },

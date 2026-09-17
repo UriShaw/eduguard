@@ -16,7 +16,7 @@ import {
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, useApi, type Alerts, type User } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 const ROLE_LABELS = { admin: "Quản trị viên", lecturer: "Giảng viên", student: "Sinh viên" } as const;
 

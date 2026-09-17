@@ -11,9 +11,10 @@ os.environ["DATABASE_URL"] = "sqlite://"  # phải đặt trước khi nạp mod
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from controllers import get_db  # noqa: E402
+from controllers.dependencies import get_db  # noqa: E402
 from main import app  # noqa: E402
-from models import Base, SessionLocal, Student, User, engine, ml  # noqa: E402
+from models import Base, SessionLocal, Student, User, engine  # noqa: E402
+from services import ml  # noqa: E402
 
 PASSWORD = "matkhau123"
 FEATURES = {"gpa": 6.5, "failed_subjects": 1, "credits_completed": 80, "attendance_rate": 82.0,

@@ -5,7 +5,13 @@ import os
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import select
 
-from controllers import DB, TOKEN_COOKIE, TOKEN_HOURS, CurrentUser, issue_token
+from controllers.dependencies import (
+    DB,
+    TOKEN_COOKIE,
+    TOKEN_HOURS,
+    CurrentUser,
+    issue_token,
+)
 from models import User
 from models.schemas import LoginIn, UserOut
 

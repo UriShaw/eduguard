@@ -16,8 +16,14 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
-                             precision_score, recall_score, roc_auc_score)
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -25,12 +31,12 @@ from sklearn.tree import DecisionTreeClassifier
 
 logger = logging.getLogger(__name__)
 
-HERE = Path(__file__).resolve().parent
-DATASET_PATH = HERE / "dataset.csv"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DATASET_PATH = DATA_DIR / "dataset.csv"
 # Model, pipeline và metadata lưu CHUNG một tệp. Tách ba tệp thì có thể lỡ
 # ghép pipeline của lần huấn luyện này với model của lần khác — dự đoán sai
 # mà không báo lỗi gì.
-ARTIFACT_PATH = HERE / "trained_model.joblib"
+ARTIFACT_PATH = DATA_DIR / "trained_model.joblib"
 
 RANDOM_STATE = 42
 

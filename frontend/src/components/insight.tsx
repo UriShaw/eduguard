@@ -9,7 +9,7 @@ import { RiskBadge } from "@/components/risk";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { api, type Factor, type FeatureKey, type Features, type SimulationResult, type Suggestion } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 /** Các yếu tố ảnh hưởng mạnh nhất. Độ dài thanh là mức ảnh hưởng TƯƠNG ĐỐI giữa các yếu tố. */
 export function FactorList({ factors }: { factors: Factor[] }) {

@@ -8,13 +8,14 @@ gợi ý việc cần làm.
 |---|---|
 | Frontend | TypeScript · React 19 · Next.js 16 · Tailwind CSS 4 · shadcn/ui · Framer Motion |
 | Backend | Python 3.10+ · FastAPI · SQLAlchemy 2 · scikit-learn · SHAP |
-| CSDL | MySQL 8 |
+| CSDL | MySQL 8 hoặc MariaDB 10.4+ (MySQL của XAMPP) |
 
 ---
 
 ## Chạy dự án
 
-Cần có sẵn: **Python 3.10+**, **Node.js 20+**, và một **MySQL 8** đang chạy.
+Cần có sẵn: **Python 3.10+**, **Node.js 20+**, và **MySQL** đang chạy. MySQL của XAMPP dùng được
+ngay — mặc định user `root`, mật khẩu để trống.
 
 ### 1. Backend
 
@@ -26,7 +27,8 @@ pip install -r requirements.txt
 
 copy .env.example .env                  # rồi mở .env, điền mật khẩu MySQL và SECRET_KEY
 
-mysql -u root -p < models\schema.sql    # tạo CSDL "eduguard" (XOÁ nếu đã có)
+mysql -u root -p < data\schema.sql      # tạo CSDL "eduguard" (XOÁ nếu đã có)
+                                        # XAMPP: <thư mục xampp>\mysql\bin\mysql.exe -u root < data\schema.sql
 python main.py train                    # huấn luyện model
 python main.py seed                     # sinh 500 sinh viên mẫu (tuỳ chọn)
 python main.py serve                    # API chạy ở http://127.0.0.1:8000
@@ -59,33 +61,44 @@ Mở **http://localhost:3000** và đăng nhập:
 ```
 eduguard/
 ├── backend/
-│   ├── main.py            Điểm vào duy nhất: app FastAPI + lệnh serve/train/seed/predict-all
-│   ├── models/            M — dữ liệu và nghiệp vụ
-│   │   ├── __init__.py    Kết nối CSDL, 8 thực thể ORM, luật phân quyền gốc
-│   │   ├── schemas.py     Ràng buộc dữ liệu vào/ra (Pydantic)
-│   │   ├── services.py    Sinh viên, chỉ số, dự đoán, gợi ý, mô phỏng, can thiệp
-│   │   ├── analytics.py   Thống kê, cảnh báo sớm, báo cáo Excel, nhập file
-│   │   ├── ml.py          Toàn bộ machine learning
-│   │   ├── seed.py        Sinh dữ liệu mẫu
-│   │   ├── schema.sql     Lược đồ MySQL
-│   │   └── dataset.csv    Dữ liệu huấn luyện
-│   ├── controllers/       C — route API, xác thực, phân quyền
-│   └── tests/             46 test, chạy trên SQLite in-memory
-└── frontend/              V — giao diện
+│   ├── main.py              Điểm vào duy nhất: app FastAPI + lệnh serve/train/seed/predict-all
+│   │
+│   ├── models/              M · dữ liệu
+│   │   ├── database.py      Kết nối CSDL, phiên làm việc
+│   │   ├── entities.py      8 bảng ORM và luật phân quyền gốc
+│   │   └── schemas.py       Ràng buộc dữ liệu vào/ra (Pydantic)
+│   │
+│   ├── services/            M · nghiệp vụ
+│   │   ├── students.py      Hồ sơ, chỉ số học tập, gặp mặt, can thiệp
+│   │   ├── predictions.py   Dự đoán, hàng loạt, mô phỏng, gợi ý, xu hướng
+│   │   ├── analytics.py     Tổng quan, cảnh báo sớm
+│   │   ├── reports.py       Xuất Excel, nhập CSV/Excel
+│   │   └── ml.py            Huấn luyện, dự đoán, giải thích SHAP
+│   │
+│   ├── controllers/         C · nhận request
+│   │   ├── dependencies.py  Phiên CSDL, xác thực, phân quyền
+│   │   ├── auth.py          Đăng nhập, đăng xuất
+│   │   ├── students.py      Mọi route gắn với một sinh viên
+│   │   └── analytics.py     Tổng quan, cảnh báo, công cụ dữ liệu, báo cáo
+│   │
+│   ├── data/                schema.sql · dataset.csv · seed.py (sinh dữ liệu mẫu)
+│   └── tests/               46 test, chạy trên SQLite in-memory
+│
+└── frontend/                V · giao diện
     └── src/
-        ├── app/           Các trang (App Router)
-        ├── components/    Khung ứng dụng, biểu đồ, hộp thoại, mô phỏng; ui/ là shadcn
-        ├── lib/api.ts     Kiểu dữ liệu và client gọi API
-        └── proxy.ts       Chuyển về trang đăng nhập khi chưa có phiên
+        ├── app/             Các trang (App Router của Next.js)
+        ├── components/      Khung ứng dụng, biểu đồ, hộp thoại, mô phỏng; ui/ là shadcn
+        ├── lib/api.ts       Kiểu dữ liệu và client gọi API
+        └── proxy.ts         Chuyển về trang đăng nhập khi chưa có phiên
 ```
 
-**Mô hình MVC ở mức hệ thống:** Next.js là View, các router FastAPI là Controller,
-`backend/models/` là Model. Ba ranh giới được giữ chặt:
+**Mô hình MVC:** `frontend/` là View, `backend/controllers/` là Controller, `backend/models/`
+(dữ liệu) cùng `backend/services/` (nghiệp vụ) là Model. Ba ranh giới được giữ chặt:
 
-- **Controller không truy vấn CSDL** — mọi truy vấn nằm trong `models/`.
-- **Nghiệp vụ không biết HTTP** — hàm trong `services.py` nhận `Session` và dữ liệu thuần,
+- **Controller không truy vấn CSDL** — mọi truy vấn nằm trong `services/`.
+- **Nghiệp vụ không biết HTTP** — hàm trong `services/` nhận `Session` và dữ liệu thuần,
   nên dùng chung được cho API, lệnh dòng lệnh và bộ test.
-- **`ml.py` không biết CSDL lẫn HTTP** — nhận số vào, trả số ra, huấn luyện và kiểm thử độc lập.
+- **`services/ml.py` không biết CSDL lẫn HTTP** — nhận số vào, trả số ra, huấn luyện và kiểm thử độc lập.
 
 **Luồng request:** trình duyệt gọi `/api/*` trên chính máy chủ Next.js, Next chuyển tiếp sang
 FastAPI (`next.config.ts`). Vì cùng nguồn, cookie đăng nhập tự đi kèm mà không cần mở CORS.
@@ -126,7 +139,7 @@ FastAPI (`next.config.ts`). Vì cùng nguồn, cookie đăng nhập tự đi kè
 | Nhập chỉ số, chạy dự đoán, lập kế hoạch | Tất cả | SV mình phụ trách | — |
 | Thêm, sửa, xoá sinh viên; nhập danh sách | ✓ | — | — |
 
-Luật gốc nằm ở `User.can_view()` và `User.can_edit()` trong `backend/models/__init__.py`;
+Luật gốc nằm ở `User.can_view()` và `User.can_edit()` trong `backend/models/entities.py`;
 mọi route đều gọi qua `load_student()` thay vì tự kiểm tra.
 
 ---
@@ -184,7 +197,8 @@ khi dùng thử bằng tài khoản admin, chỉ có test mới bắt được.
 | Frontend báo lỗi khi gọi API / trang trắng sau đăng nhập | Backend chưa chạy. Kiểm tra http://127.0.0.1:8000/api/health |
 | `Can't connect to MySQL server` | MySQL chưa chạy hoặc sai `DB_HOST`/`DB_PORT` trong `backend/.env` |
 | API trả 503 "Chưa có model" | Chạy `python main.py train` |
-| `#1265 Data truncated for column 'risk_level'` | CSDL được tạo bằng client không dùng UTF-8. `schema.sql` đã có `SET NAMES utf8mb4` ở đầu — chạy lại file này |
+| `#1265 Data truncated for column 'risk_level'` | CSDL được tạo bằng client không dùng UTF-8. `data/schema.sql` đã có `SET NAMES utf8mb4` ở đầu — chạy lại file này |
+| `No module named 'models.ml'` khi nạp model | Model được huấn luyện trước khi đổi cấu trúc thư mục. Chạy lại `python main.py train` |
 | `UnicodeEncodeError: 'charmap' codec` | Console Windows không dùng UTF-8; `main.py` đã tự xử lý. Script tự viết thì đặt `PYTHONIOENCODING=utf-8` |
 | Đăng nhập được nhưng bị đẩy về trang đăng nhập ngay | `SECRET_KEY` bị đổi sau khi đăng nhập làm token cũ mất hiệu lực — đăng nhập lại |
 | Cổng 8000 hoặc 3000 đã bị chiếm | `python main.py serve --port 8001` và đặt `API_URL=http://127.0.0.1:8001` khi chạy frontend; `npm run dev -- -p 3001` |
