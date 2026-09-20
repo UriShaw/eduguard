@@ -17,7 +17,17 @@ gợi ý việc cần làm.
 Cần có sẵn: **Python 3.10+**, **Node.js 20+**, và **MySQL** đang chạy. MySQL của XAMPP dùng được
 ngay — mặc định user `root`, mật khẩu để trống.
 
-### 1. Backend
+### 1. Kết nối MySQL
+
+```powershell
+cd database
+copy .env.example .env                  # rồi mở .env, điền mật khẩu MySQL (XAMPP: để trống)
+```
+
+Thứ tự đọc cấu hình và các cách tạo CSDL khác (client `mysql`, phpMyAdmin) xem ở
+[database/README.md](database/README.md).
+
+### 2. Backend
 
 ```powershell
 cd backend
@@ -25,10 +35,9 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-copy .env.example .env                  # rồi mở .env, điền mật khẩu MySQL và SECRET_KEY
+copy .env.example .env                  # rồi mở .env, đổi SECRET_KEY
 
-mysql -u root -p < data\schema.sql      # tạo CSDL "eduguard" (XOÁ nếu đã có)
-                                        # XAMPP: <thư mục xampp>\mysql\bin\mysql.exe -u root < data\schema.sql
+python main.py init-db                  # tạo CSDL từ database\schema.sql (XOÁ nếu đã có)
 python main.py train                    # huấn luyện model
 python main.py seed                     # sinh 500 sinh viên mẫu (tuỳ chọn)
 python main.py serve                    # API chạy ở http://127.0.0.1:8000
@@ -36,7 +45,7 @@ python main.py serve                    # API chạy ở http://127.0.0.1:8000
 
 Tài liệu API tương tác: http://127.0.0.1:8000/docs
 
-### 2. Frontend — mở một cửa sổ terminal khác
+### 3. Frontend — mở một cửa sổ terminal khác
 
 ```powershell
 cd frontend
@@ -60,16 +69,21 @@ Mở **http://localhost:3000** và đăng nhập:
 
 ```
 eduguard/
+├── database/                Kết nối MySQL, tách khỏi mã nguồn
+│   ├── .env.example         Mẫu cấu hình host, cổng, user, mật khẩu — sao chép thành .env
+│   └── schema.sql           Lược đồ 8 bảng
+│
 ├── backend/
-│   ├── main.py              Điểm vào duy nhất: app FastAPI + lệnh serve/train/seed/predict-all
+│   ├── main.py              Điểm vào duy nhất: app FastAPI + lệnh init-db/serve/train/seed/predict-all
 │   │
 │   ├── models/              M · dữ liệu
-│   │   ├── database.py      Kết nối CSDL, phiên làm việc
+│   │   ├── database.py      Đọc database/.env, tạo engine và phiên làm việc, chạy schema.sql
 │   │   ├── entities.py      8 bảng ORM và luật phân quyền gốc
 │   │   └── schemas.py       Ràng buộc dữ liệu vào/ra (Pydantic)
 │   │
 │   ├── services/            M · nghiệp vụ
 │   │   ├── students.py      Hồ sơ, chỉ số học tập, gặp mặt, can thiệp
+│   │   ├── accounts.py      Tài khoản, mật khẩu, cán bộ tư vấn
 │   │   ├── predictions.py   Dự đoán, hàng loạt, mô phỏng, gợi ý, xu hướng
 │   │   ├── analytics.py     Tổng quan, cảnh báo sớm
 │   │   ├── reports.py       Xuất Excel, nhập CSV/Excel
@@ -77,18 +91,26 @@ eduguard/
 │   │
 │   ├── controllers/         C · nhận request
 │   │   ├── dependencies.py  Phiên CSDL, xác thực, phân quyền
-│   │   ├── auth.py          Đăng nhập, đăng xuất
+│   │   ├── auth.py          Đăng nhập, đăng xuất, đổi mật khẩu
 │   │   ├── students.py      Mọi route gắn với một sinh viên
-│   │   └── analytics.py     Tổng quan, cảnh báo, công cụ dữ liệu, báo cáo
+│   │   ├── analytics.py     Tổng quan, cảnh báo, công cụ dữ liệu, báo cáo
+│   │   └── admin.py         Tài khoản, cán bộ tư vấn
 │   │
-│   ├── data/                schema.sql · dataset.csv · seed.py (sinh dữ liệu mẫu)
-│   └── tests/               46 test, chạy trên SQLite in-memory
+│   ├── data/                dataset.csv · seed.py (sinh dữ liệu mẫu)
+│   └── tests/               62 test, chạy trên SQLite in-memory
 │
 └── frontend/                V · giao diện
     └── src/
         ├── app/             Các trang (App Router của Next.js)
-        ├── components/      Khung ứng dụng, biểu đồ, hộp thoại, mô phỏng; ui/ là shadcn
-        ├── lib/api.ts       Kiểu dữ liệu và client gọi API
+        ├── components/
+        │   ├── mac/         Khung kiểu macOS: thanh menu, Dock, Spotlight, trung tâm thông báo, hình nền
+        │   ├── app-shell    Cửa sổ ứng dụng, thanh bên, thanh công cụ, phím tắt
+        │   ├── dialogs      Mọi biểu mẫu thêm/sửa và hộp xác nhận xoá
+        │   └── ui/          shadcn, đã phủ lớp kính
+        ├── lib/
+        │   ├── api.ts         Kiểu dữ liệu và client gọi API
+        │   ├── navigation.ts  Một nguồn điều hướng cho Dock, thanh bên, menu, Spotlight
+        │   └── preferences.tsx  Giao diện sáng/tối, hình nền, hiệu ứng (lưu trong trình duyệt)
         └── proxy.ts         Chuyển về trang đăng nhập khi chưa có phiên
 ```
 
@@ -123,12 +145,34 @@ FastAPI (`next.config.ts`). Vì cùng nguồn, cookie đăng nhập tự đi kè
 2. *Vì sao:* các yếu tố đẩy nguy cơ lên hoặc kéo xuống (SHAP)
 3. *Nên làm gì:* gợi ý can thiệp suy ra từ các yếu tố đó, thêm vào kế hoạch một chạm
 4. *Nếu… thì sao:* kéo thanh trượt để xem nguy cơ giảm bao nhiêu khi cải thiện từng chỉ số
-5. Diễn biến qua các học kỳ, kế hoạch can thiệp, biên bản gặp mặt, lịch sử dự đoán
+5. Diễn biến qua các học kỳ và bốn danh sách thêm/sửa/xoá được: kế hoạch can thiệp, biên bản
+   gặp mặt, lịch sử chỉ số, lịch sử dự đoán
 
 **Dự đoán nhanh** — thử với chỉ số nhập tay, không gắn sinh viên, không lưu.
 
 **Dữ liệu & báo cáo** — sắp theo thứ tự công việc một học kỳ: nhập CSV/Excel → cập nhật dự
 đoán hàng loạt → xuất báo cáo Excel.
+
+**Quản trị** — tạo, sửa, khoá, xoá tài khoản; đặt lại mật khẩu; quản lý cán bộ tư vấn.
+
+**Cài đặt** — đổi mật khẩu, chọn giao diện sáng/tối, hình nền và hiệu ứng.
+
+### Giao diện
+
+Giao diện dựng theo macOS với chất liệu kính lỏng: thanh menu trên cùng, cửa sổ có ba nút đèn
+giao thông (đỏ khoá màn hình, vàng thu thanh bên, xanh toàn màn hình), Dock phóng to khi rê chuột,
+màn hình khoá để đăng nhập. Trên Chrome, Edge và Opera, nền sau Dock và Spotlight còn bị khúc
+xạ như nhìn qua kính.
+
+| Phím tắt (Mac / Windows) | Tác dụng |
+|---|---|
+| `⌘K` / `Ctrl+K` | Spotlight — tìm sinh viên, trang, thao tác |
+| `⌥1`…`⌥7` / `Alt+1`…`Alt+7` | Chuyển trang |
+| `⌥N` / `Alt+N` | Trung tâm thông báo |
+| `⌥S`, `⌥M` / `Alt+S`, `Alt+M` | Ẩn thanh bên, toàn màn hình |
+| `⌥L` / `Alt+L` | Khoá màn hình |
+| `↑` `↓`, `Space`, `↵` | Trong danh sách sinh viên: chọn, xem nhanh, mở hồ sơ |
+| Chuột phải | Menu thao tác trên dòng sinh viên và tài khoản |
 
 ### Phân quyền
 
@@ -136,8 +180,10 @@ FastAPI (`next.config.ts`). Vì cùng nguồn, cookie đăng nhập tự đi kè
 |---|:-:|:-:|:-:|
 | Tổng quan, cảnh báo, báo cáo | Toàn trường | SV mình phụ trách | — |
 | Xem hồ sơ, dự đoán, kế hoạch | Tất cả | SV mình phụ trách | Chỉ của mình |
-| Nhập chỉ số, chạy dự đoán, lập kế hoạch | Tất cả | SV mình phụ trách | — |
+| Nhập, sửa, xoá chỉ số; chạy, xoá dự đoán; thêm, sửa, xoá kế hoạch và biên bản | Tất cả | SV mình phụ trách | — |
 | Thêm, sửa, xoá sinh viên; nhập danh sách | ✓ | — | — |
+| Tài khoản, cán bộ tư vấn | ✓ | Chỉ xem cán bộ | — |
+| Đổi mật khẩu của chính mình | ✓ | ✓ | ✓ |
 
 Luật gốc nằm ở `User.can_view()` và `User.can_edit()` trong `backend/models/entities.py`;
 mọi route đều gọi qua `load_student()` thay vì tự kiểm tra.
@@ -178,7 +224,7 @@ Kết quả dự đoán là căn cứ để bắt đầu một cuộc trò chuy�
 
 ```powershell
 cd backend
-pytest                     # 46 test, không cần MySQL
+pytest                     # 62 test, không cần MySQL
 
 cd ..\frontend
 npm run lint
@@ -195,9 +241,9 @@ khi dùng thử bằng tài khoản admin, chỉ có test mới bắt được.
 | Triệu chứng | Cách xử lý |
 |---|---|
 | Frontend báo lỗi khi gọi API / trang trắng sau đăng nhập | Backend chưa chạy. Kiểm tra http://127.0.0.1:8000/api/health |
-| `Can't connect to MySQL server` | MySQL chưa chạy hoặc sai `DB_HOST`/`DB_PORT` trong `backend/.env` |
+| `Can't connect to MySQL server` | MySQL chưa chạy hoặc sai `DB_HOST`/`DB_PORT` trong `database/.env` |
 | API trả 503 "Chưa có model" | Chạy `python main.py train` |
-| `#1265 Data truncated for column 'risk_level'` | CSDL được tạo bằng client không dùng UTF-8. `data/schema.sql` đã có `SET NAMES utf8mb4` ở đầu — chạy lại file này |
+| `#1265 Data truncated for column 'risk_level'` | CSDL được tạo bằng client không dùng UTF-8. `database/schema.sql` đã có `SET NAMES utf8mb4` ở đầu — chạy lại `python main.py init-db` |
 | `No module named 'models.ml'` khi nạp model | Model được huấn luyện trước khi đổi cấu trúc thư mục. Chạy lại `python main.py train` |
 | `UnicodeEncodeError: 'charmap' codec` | Console Windows không dùng UTF-8; `main.py` đã tự xử lý. Script tự viết thì đặt `PYTHONIOENCODING=utf-8` |
 | Đăng nhập được nhưng bị đẩy về trang đăng nhập ngay | `SECRET_KEY` bị đổi sau khi đăng nhập làm token cũ mất hiệu lực — đăng nhập lại |

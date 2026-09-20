@@ -13,10 +13,13 @@ from models import (
     INTERVENTION_STATUSES,
     MEETING_TYPES,
     Intervention,
+    MeetingLog,
+    Prediction,
 )
 from models.schemas import (
     InterventionIn,
     InterventionOut,
+    InterventionUpdate,
     MeetingIn,
     MeetingOut,
     MetricsIn,
@@ -158,11 +161,62 @@ def add_intervention(student_id: int, body: InterventionIn, user: Staff, db: DB)
     return {"ok": True}
 
 
+def _owned(db, user, model, record_id: int, missing: str):
+    """Nạp bản ghi con của một sinh viên và kiểm tra quyền SỬA trên sinh viên sở hữu nó."""
+    record = db.get(model, record_id)
+    if record is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, missing)
+    load_student(db, user, record.student_id, edit=True)
+    return record
+
+
 @router.patch("/interventions/{intervention_id}")
-def update_intervention(intervention_id: int, body: StatusIn, user: Staff, db: DB):
-    item = db.get(Intervention, intervention_id)
-    if item is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Không tìm thấy việc can thiệp")
-    load_student(db, user, item.student_id, edit=True)  # kiểm tra quyền trên sinh viên sở hữu
+def set_intervention_status(intervention_id: int, body: StatusIn, user: Staff, db: DB):
+    item = _owned(db, user, Intervention, intervention_id, "Không tìm thấy việc can thiệp")
     students.set_intervention_status(db, item, body.status)
     return {"ok": True}
+
+
+@router.put("/interventions/{intervention_id}")
+def update_intervention(intervention_id: int, body: InterventionUpdate, user: Staff, db: DB):
+    item = _owned(db, user, Intervention, intervention_id, "Không tìm thấy việc can thiệp")
+    students.update_intervention(db, item, body.model_dump())
+    return {"ok": True}
+
+
+@router.delete("/interventions/{intervention_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_intervention(intervention_id: int, user: Staff, db: DB):
+    students.delete_intervention(db, _owned(db, user, Intervention, intervention_id, "Không tìm thấy việc can thiệp"))
+
+
+@router.put("/meetings/{meeting_id}")
+def update_meeting(meeting_id: int, body: MeetingIn, user: Staff, db: DB):
+    meeting = _owned(db, user, MeetingLog, meeting_id, "Không tìm thấy biên bản gặp mặt")
+    students.update_meeting(db, meeting, body.model_dump())
+    return {"ok": True}
+
+
+@router.delete("/meetings/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_meeting(meeting_id: int, user: Staff, db: DB):
+    students.delete_meeting(db, _owned(db, user, MeetingLog, meeting_id, "Không tìm thấy biên bản gặp mặt"))
+
+
+@router.delete("/predictions/{prediction_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_prediction(prediction_id: int, user: Staff, db: DB):
+    students.delete_prediction(db, _owned(db, user, Prediction, prediction_id, "Không tìm thấy lần dự đoán"))
+
+
+@router.get("/students/{student_id}/metrics")
+def metrics_history(student_id: int, user: CurrentUser, db: DB):
+    return students.metrics_history(load_student(db, user, student_id))
+
+
+@router.put("/students/{student_id}/metrics/{result_id}")
+def update_metrics(student_id: int, result_id: int, body: MetricsIn, user: Staff, db: DB):
+    students.update_metrics(db, load_student(db, user, student_id, edit=True), result_id, body.model_dump())
+    return {"ok": True}
+
+
+@router.delete("/students/{student_id}/metrics/{result_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_metrics(student_id: int, result_id: int, user: Staff, db: DB):
+    students.delete_metrics(db, load_student(db, user, student_id, edit=True), result_id)

@@ -94,6 +94,7 @@ export interface Meeting {
   type_label: string;
   duration_minutes: number;
   notes: string | null;
+  counselor_id: number | null;
   counselor: string | null;
 }
 
@@ -106,8 +107,35 @@ export interface Intervention {
   status: InterventionStatus;
   due_date: string | null;
   completed_at: string | null;
+  counselor_id: number | null;
   counselor: string | null;
   is_overdue: boolean;
+}
+
+/** Một lát cắt chỉ số trong lịch sử: mười chỉ số của model cùng các trường lưu trữ. */
+export interface MetricsRecord extends Record<FeatureKey, number | null> {
+  result_id: number;
+  semester: string;
+  credits_registered: number;
+  total_sessions: number | null;
+  absent_sessions: number | null;
+  recorded_at: string;
+}
+
+export interface Account extends User {
+  email: string | null;
+  is_active: boolean;
+  created_at: string;
+  advisees: number;
+  student_code: string | null;
+}
+
+export interface Counselor {
+  counselor_id: number;
+  full_name: string;
+  title: string | null;
+  email: string | null;
+  phone: string | null;
 }
 
 export interface TrendPoint {
@@ -233,6 +261,12 @@ export function useApi<T>(path: string | null, config?: SWRConfiguration<T>) {
 
 export const RISK_LEVELS: RiskLevel[] = ["Thấp", "Trung bình", "Cao", "Rất cao"];
 
+export const ROLE_LABELS: Record<Role, string> = {
+  admin: "Quản trị viên",
+  lecturer: "Giảng viên",
+  student: "Sinh viên",
+};
+
 export const STATUS_LABELS: Record<StudentStatus, string> = {
   active: "Đang học",
   dropped: "Đã nghỉ",
@@ -244,3 +278,9 @@ export const percent = (value: number | null | undefined, digits = 0) =>
 
 export const formatDate = (value: string | null | undefined) =>
   value ? new Date(value).toLocaleDateString("vi-VN") : "—";
+
+export const formatDateTime = (value: string | null | undefined) =>
+  value ? new Date(value).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" }) : "—";
+
+/** Chữ cái đầu của tên riêng (từ cuối) — tên tiếng Việt đặt tên gọi ở cuối. */
+export const initials = (name: string) => (name.trim().split(/\s+/).pop()?.[0] ?? "?").toUpperCase();

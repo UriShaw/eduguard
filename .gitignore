@@ -23,3 +23,7 @@ next-env.d.ts
 .idea/
 Thumbs.db
 .DS_Store
+
+# Thư mục worktree tạm của công cụ hỗ trợ
+.claude/worktrees/
+backend/.claude/

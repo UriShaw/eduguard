@@ -7,9 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-vietnam), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* SF Pro trên máy Apple (đủ dấu tiếng Việt), Be Vietnam Pro ở mọi nơi khác. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-vietnam), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", var(--font-geist-mono), monospace;
+  --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-vietnam), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +40,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-rim: var(--rim);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -46,90 +50,111 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.25, 1.12);
+  --ease-mac: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* =====================================================================
+   Token màu. Mọi bề mặt đều trong suốt một phần: màu thật đến từ hình nền
+   phía sau, được làm mờ và tăng bão hoà — đúng tinh thần kính lỏng.
+   ===================================================================== */
+
 :root {
-  --background: oklch(0.985 0.004 264);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.52 0.19 264);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0.012 264);
-  --secondary-foreground: oklch(0.3 0.06 264);
-  --muted: oklch(0.96 0.008 264);
-  --muted-foreground: oklch(0.52 0.02 264);
-  --accent: oklch(0.95 0.025 264);
-  --accent-foreground: oklch(0.35 0.12 264);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.915 0.01 264);
-  --input: oklch(0.915 0.01 264);
-  --ring: oklch(0.52 0.19 264);
-  --chart-1: oklch(0.52 0.19 264);
+  --radius: 0.75rem;
+
+  --background: oklch(0.985 0.004 264 / 60%);
+  --foreground: oklch(0.2 0.01 264);
+  --card: oklch(1 0 0 / 52%);
+  --card-foreground: oklch(0.2 0.01 264);
+  --popover: oklch(0.995 0.002 264 / 72%);
+  --popover-foreground: oklch(0.2 0.01 264);
+  --primary: oklch(0.6 0.2 256);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(1 0 0 / 55%);
+  --secondary-foreground: oklch(0.25 0.02 264);
+  --muted: oklch(0.35 0.02 264 / 7%);
+  --muted-foreground: oklch(0.45 0.015 264);
+  --accent: oklch(0.6 0.2 256 / 12%);
+  --accent-foreground: oklch(0.45 0.18 256);
+  --destructive: oklch(0.6 0.23 27);
+  --border: oklch(0.3 0.02 264 / 11%);
+  --input: oklch(0.3 0.02 264 / 14%);
+  --ring: oklch(0.6 0.2 256);
+  --chart-1: oklch(0.6 0.2 256);
   --chart-2: oklch(0.7 0.14 190);
   --chart-3: oklch(0.75 0.15 75);
   --chart-4: oklch(0.65 0.2 30);
-  --chart-5: oklch(0.55 0.2 350);
-  --radius: 0.75rem;
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.52 0.19 264);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.95 0.025 264);
-  --sidebar-accent-foreground: oklch(0.35 0.12 264);
-  --sidebar-border: oklch(0.915 0.01 264);
-  --sidebar-ring: oklch(0.708 0 0);
+  --chart-5: oklch(0.6 0.2 320);
+  --sidebar: oklch(1 0 0 / 40%);
+  --sidebar-foreground: oklch(0.2 0.01 264);
+  --sidebar-primary: oklch(0.6 0.2 256);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.35 0.02 264 / 8%);
+  --sidebar-accent-foreground: oklch(0.2 0.01 264);
+  --sidebar-border: oklch(0.3 0.02 264 / 10%);
+  --sidebar-ring: oklch(0.6 0.2 256);
+
+  --glass: oklch(1 0 0 / 38%);
+  --glass-strong: oklch(0.99 0.003 264 / 62%);
+  --field: oklch(1 0 0 / 55%);
+  --rim: oklch(1 0 0 / 75%);
+  --rim-soft: oklch(1 0 0 / 22%);
+  --shadow-color: 230 30% 20%;
 }
 
 .dark {
-  --background: oklch(0.16 0.02 264);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.2 0.025 264);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.2 0.025 264);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.68 0.16 264);
-  --primary-foreground: oklch(0.16 0.02 264);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.26 0.025 264);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.28 0.04 264);
-  --accent-foreground: oklch(0.9 0.05 264);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.68 0.16 264);
-  --chart-2: oklch(0.72 0.12 190);
-  --chart-3: oklch(0.78 0.14 75);
-  --chart-4: oklch(0.7 0.18 30);
-  --chart-5: oklch(0.65 0.18 350);
-  --sidebar: oklch(0.19 0.022 264);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.68 0.16 264);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.28 0.04 264);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.2 0.012 264 / 55%);
+  --foreground: oklch(0.97 0.004 264);
+  --card: oklch(0.3 0.012 264 / 42%);
+  --card-foreground: oklch(0.97 0.004 264);
+  --popover: oklch(0.24 0.012 264 / 74%);
+  --popover-foreground: oklch(0.97 0.004 264);
+  --primary: oklch(0.68 0.17 256);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(1 0 0 / 10%);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(1 0 0 / 8%);
+  --muted-foreground: oklch(0.78 0.012 264);
+  --accent: oklch(0.68 0.17 256 / 22%);
+  --accent-foreground: oklch(0.85 0.1 256);
+  --destructive: oklch(0.7 0.19 25);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.68 0.17 256);
+  --chart-1: oklch(0.7 0.16 256);
+  --chart-2: oklch(0.74 0.12 190);
+  --chart-3: oklch(0.8 0.14 75);
+  --chart-4: oklch(0.72 0.18 30);
+  --chart-5: oklch(0.7 0.18 320);
+  --sidebar: oklch(0.22 0.012 264 / 40%);
+  --sidebar-foreground: oklch(0.97 0.004 264);
+  --sidebar-primary: oklch(0.68 0.17 256);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(1 0 0 / 9%);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+  --sidebar-ring: oklch(0.68 0.17 256);
 
+  --glass: oklch(0.22 0.012 264 / 42%);
+  --glass-strong: oklch(0.2 0.012 264 / 64%);
+  --field: oklch(1 0 0 / 8%);
+  --rim: oklch(1 0 0 / 30%);
+  --rim-soft: oklch(1 0 0 / 7%);
+  --shadow-color: 230 40% 3%;
+}
 
 /* Bốn mức nguy cơ — một nguồn màu duy nhất cho nhãn, biểu đồ và thước đo. */
 :root {
-  --risk-low: oklch(0.6 0.13 160);
-  --risk-medium: oklch(0.72 0.15 75);
-  --risk-high: oklch(0.64 0.2 40);
-  --risk-critical: oklch(0.55 0.22 20);
+  --risk-low: oklch(0.62 0.14 158);
+  --risk-medium: oklch(0.74 0.16 72);
+  --risk-high: oklch(0.66 0.2 42);
+  --risk-critical: oklch(0.6 0.23 22);
 }
 .dark {
-  --risk-low: oklch(0.7 0.13 160);
-  --risk-medium: oklch(0.8 0.14 80);
-  --risk-high: oklch(0.72 0.18 45);
-  --risk-critical: oklch(0.66 0.2 22);
+  --risk-low: oklch(0.74 0.14 158);
+  --risk-medium: oklch(0.82 0.15 80);
+  --risk-high: oklch(0.75 0.18 45);
+  --risk-critical: oklch(0.7 0.2 22);
 }
 
 @theme inline {
@@ -139,17 +164,305 @@
   --color-risk-critical: var(--risk-critical);
 }
 
+/* =====================================================================
+   Kính lỏng
+   ===================================================================== */
+
+/* Viền sáng phản chiếu: sáng ở góc trên trái và dưới phải, tối dần ở giữa —
+   thứ làm một tấm nền mờ trông như khối kính có độ dày. */
+@utility rim {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(140deg, var(--rim), var(--rim-soft) 30%, transparent 55%, var(--rim-soft) 78%, var(--rim));
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+@utility glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
+  backdrop-filter: blur(28px) saturate(185%);
+  box-shadow:
+    inset 0 1px 0 0 oklch(1 0 0 / 30%),
+    0 1px 1px hsl(var(--shadow-color) / 0.04),
+    0 12px 32px -12px hsl(var(--shadow-color) / 0.22);
+}
+
+@utility glass-strong {
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(48px) saturate(190%);
+  backdrop-filter: blur(48px) saturate(190%);
+  box-shadow:
+    inset 0 1px 0 0 oklch(1 0 0 / 35%),
+    0 0 0 0.5px hsl(var(--shadow-color) / 0.12),
+    0 24px 70px -20px hsl(var(--shadow-color) / 0.45),
+    0 8px 24px -12px hsl(var(--shadow-color) / 0.25);
+}
+
+@utility glass-thin {
+  background: color-mix(in oklch, var(--glass), transparent 35%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+}
+
+/* Kính thật có khúc xạ: Chromium cho phép bộ lọc SVG trong backdrop-filter nên
+   nền phía sau Dock và Spotlight bị bẻ cong như nhìn qua thấu kính. Trình duyệt
+   khác bỏ qua khai báo không hiểu và giữ lớp mờ thường. */
+html[data-lens="on"] .liquid-lens {
+  backdrop-filter: url(#liquid-lens) blur(14px) saturate(190%);
+}
+
+/* Vệt sáng đi theo con trỏ trên thẻ — biến --mx/--my do AppShell cập nhật. */
+[data-slot="card"] {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    inset 0 1px 0 0 oklch(1 0 0 / 38%),
+    0 1px 2px hsl(var(--shadow-color) / 0.05),
+    0 10px 30px -18px hsl(var(--shadow-color) / 0.3);
+  transition: box-shadow 0.4s var(--ease-mac), transform 0.4s var(--ease-mac);
+}
+[data-slot="card"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, -200%), oklch(1 0 0 / 22%), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+[data-slot="card"]:hover::after {
+  opacity: 1;
+}
+.dark [data-slot="card"]::after {
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, -200%), oklch(1 0 0 / 9%), transparent 45%);
+}
+
+/* Lớp nổi (menu, ô chọn, hộp thoại, gợi ý) đều là kính dày. */
+[data-slot="dropdown-menu-content"],
+[data-slot="dropdown-menu-sub-content"],
+[data-slot="select-content"],
+[data-slot="context-menu-content"],
+[data-slot="context-menu-sub-content"],
+[data-slot="popover-content"],
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"],
+[data-slot="sheet-content"] {
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  backdrop-filter: blur(40px) saturate(190%);
+  box-shadow:
+    inset 0 1px 0 0 oklch(1 0 0 / 40%),
+    0 0 0 0.5px hsl(var(--shadow-color) / 0.14),
+    0 30px 80px -24px hsl(var(--shadow-color) / 0.5);
+}
+
+[data-slot="dialog-overlay"],
+[data-slot="alert-dialog-overlay"],
+[data-slot="sheet-overlay"] {
+  background: oklch(0.2 0.02 264 / 18%);
+  backdrop-filter: blur(3px) saturate(120%);
+}
+
+/* Hộp thoại bật ra như sheet của macOS: nảy nhẹ khi mở, thu gọn nhanh khi đóng. */
+[data-slot="dialog-content"][data-state="open"],
+[data-slot="alert-dialog-content"][data-state="open"] {
+  animation: mac-pop-in 0.42s var(--ease-spring) both;
+}
+[data-slot="dialog-content"][data-state="closed"],
+[data-slot="alert-dialog-content"][data-state="closed"] {
+  animation: mac-pop-out 0.18s ease-in both;
+}
+[data-slot="dropdown-menu-content"][data-state="open"],
+[data-slot="select-content"][data-state="open"],
+[data-slot="context-menu-content"][data-state="open"],
+[data-slot="popover-content"][data-state="open"] {
+  animation: mac-menu-in 0.2s var(--ease-mac) both;
+}
+
+/* Chỉ đổi scale: vị trí giữa màn hình do thuộc tính translate riêng của Tailwind giữ. */
+@keyframes mac-pop-in {
+  from { opacity: 0; transform: scale(0.9); filter: blur(10px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@keyframes mac-pop-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); filter: blur(4px); }
+}
+@keyframes mac-menu-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* =====================================================================
+   Hình nền
+   ===================================================================== */
+
+html {
+  --wp-base: linear-gradient(160deg, #1d3b8a 0%, #4b2f9c 45%, #0f5c9e 100%);
+  --wp-1: #3b82f6;
+  --wp-2: #a855f7;
+  --wp-3: #06b6d4;
+  --wp-4: #f472b6;
+}
+html[data-wallpaper="sunset"] {
+  --wp-base: linear-gradient(160deg, #7c2d5a 0%, #e0583c 50%, #f5a340 100%);
+  --wp-1: #fb7185;
+  --wp-2: #f59e0b;
+  --wp-3: #c026d3;
+  --wp-4: #fde047;
+}
+html[data-wallpaper="lagoon"] {
+  --wp-base: linear-gradient(160deg, #064e57 0%, #0f766e 45%, #1e40af 100%);
+  --wp-1: #2dd4bf;
+  --wp-2: #38bdf8;
+  --wp-3: #34d399;
+  --wp-4: #818cf8;
+}
+html[data-wallpaper="graphite"] {
+  --wp-base: linear-gradient(160deg, #3f4652 0%, #1f2530 55%, #4b5563 100%);
+  --wp-1: #94a3b8;
+  --wp-2: #64748b;
+  --wp-3: #cbd5e1;
+  --wp-4: #475569;
+}
+html[data-wallpaper="aurora"] {
+  --wp-base: linear-gradient(160deg, #052e2b 0%, #134e4a 40%, #312e81 100%);
+  --wp-1: #22c55e;
+  --wp-2: #a3e635;
+  --wp-3: #8b5cf6;
+  --wp-4: #06b6d4;
+}
+
+.wallpaper {
+  background: var(--wp-base);
+}
+.wallpaper-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.75;
+  will-change: transform;
+}
+html:not([data-motion="reduced"]) .wallpaper-blob {
+  animation: drift var(--drift, 36s) ease-in-out infinite alternate;
+}
+.dark .wallpaper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: oklch(0.12 0.02 264 / 48%);
+}
+/* Hạt nhiễu rất mịn phủ lên nền, tránh dải màu gradient bị vằn trên màn hình 8-bit. */
+.wallpaper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+@keyframes drift {
+  0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate3d(6vw, -4vh, 0) scale(1.18) rotate(20deg); }
+  100% { transform: translate3d(-5vw, 5vh, 0) scale(0.92) rotate(-12deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%, 55% { transform: translateX(-10px); }
+  35%, 75% { transform: translateX(10px); }
+}
+
+/* Người dùng chọn giảm chuyển động: tắt mọi hoạt ảnh CSS dài. */
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* =====================================================================
+   Nền tảng
+   ===================================================================== */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
-  button:not(:disabled), [role="button"]:not(:disabled) {
-    cursor: pointer;
-  }
   html {
     @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    background: #1f2a44;
   }
+  body {
+    @apply text-foreground;
+    background: transparent;
+  }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: default;
+  }
+  a, button:not(:disabled) {
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--primary), transparent 70%);
+  }
+  input[type="number"]::-webkit-inner-spin-button {
+    opacity: 0.4;
+  }
+}
+
+/* Thanh cuộn mảnh kiểu macOS, chỉ hiện rõ khi rê chuột vào vùng cuộn. */
+.mac-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s;
+}
+.mac-scroll:hover {
+  scrollbar-color: oklch(0.5 0.02 264 / 35%) transparent;
+}
+.mac-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.mac-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+  background-color: transparent;
+}
+.mac-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: oklch(0.5 0.02 264 / 40%);
+}
+
+/* Nhãn chữ trên kính đậm màu nền cần bóng rất nhẹ để luôn đọc được. */
+.text-on-wallpaper {
+  color: white;
+  text-shadow: 0 1px 12px oklch(0 0 0 / 35%);
+}
+
+/* Toast của sonner cũng là kính. */
+[data-sonner-toaster] [data-sonner-toast] {
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border: 0.5px solid var(--border) !important;
+  border-radius: 18px !important;
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  backdrop-filter: blur(40px) saturate(190%);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 35%), 0 20px 50px -20px hsl(var(--shadow-color) / 0.5) !important;
+}
+[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground) !important;
 }

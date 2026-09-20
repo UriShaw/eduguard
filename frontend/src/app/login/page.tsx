@@ -1,20 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { BellRing, ChartNoAxesCombined, Lightbulb, LineChart, LoaderCircle } from "lucide-react";
+import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { ArrowRight, ChartNoAxesCombined, LoaderCircle, UserRound } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { api, type User } from "@/lib/api";
-
-const HIGHLIGHTS = [
-  { icon: BellRing, title: "Cảnh báo sớm", text: "Biết ngay sinh viên nào đang xấu đi nhanh hoặc chưa ai hỗ trợ." },
-  { icon: LineChart, title: "Hiểu nguyên nhân", text: "Mỗi dự đoán kèm yếu tố đã đẩy nguy cơ lên hay kéo xuống." },
-  { icon: Lightbulb, title: "Biết nên làm gì", text: "Gợi ý can thiệp và mô phỏng hiệu quả trước khi hành động." },
-];
+import { useNow } from "@/lib/client";
+import { cn } from "cn";
 
 /** Chỉ chấp nhận đường dẫn nội bộ — chặn chuyển hướng sang trang giả mạo sau khi đăng nhập. */
 function safeNext(target: string | null, user: User) {
@@ -22,11 +15,35 @@ function safeNext(target: string | null, user: User) {
   return user.role === "student" ? `/students/${user.student_id}` : "/";
 }
 
+function LockClock() {
+  const time = useNow(1000);
+  const now = time ? new Date(time) : null;
+
+  return (
+    <div className="text-on-wallpaper text-center select-none">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: now ? 1 : 0, y: 0 }} transition={{ duration: 0.6 }}
+                  className="text-lg font-medium capitalize opacity-90 sm:text-xl">
+        {now?.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" })}
+      </motion.div>
+      <motion.div initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: now ? 1 : 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 120, damping: 18 }}
+                  className="font-heading text-[96px] leading-none font-semibold tracking-tight tabular-nums sm:text-[132px]"
+                  style={{ fontWeight: 600, letterSpacing: "-0.04em" }}>
+        {now?.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) ?? "00:00"}
+      </motion.div>
+    </div>
+  );
+}
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const shake = useAnimationControls();
+  const password = useRef<HTMLInputElement>(null);
+  const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,83 +55,88 @@ function LoginForm() {
         method: "POST",
         json: { username: data.get("username"), password: data.get("password") },
       });
-      router.replace(safeNext(params.get("next"), user));
+      setUnlocked(true);
+      // Để hiệu ứng mở khoá chạy xong rồi mới chuyển trang.
+      setTimeout(() => router.replace(safeNext(params.get("next"), user)), 520);
     } catch (e) {
       setError((e as Error).message);
       setBusy(false);
+      shake.start({ x: [0, -14, 14, -10, 10, -4, 4, 0], transition: { duration: 0.5 } });
+      if (password.current) {
+        password.current.value = "";
+        password.current.focus();
+      }
     }
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="username">Tên đăng nhập</Label>
-        <Input id="username" name="username" autoComplete="username" autoFocus required className="h-10" />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="password">Mật khẩu</Label>
-        <Input id="password" name="password" type="password" autoComplete="current-password" required className="h-10" />
-      </div>
-      {error && (
-        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                  className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </motion.p>
-      )}
-      <Button type="submit" className="h-10 w-full" disabled={busy}>
-        {busy && <LoaderCircle className="animate-spin" />} Đăng nhập
-      </Button>
-    </form>
+    <motion.div className="flex min-h-dvh flex-col items-center justify-between px-6 pt-[9vh] pb-10"
+                animate={unlocked ? { opacity: 0, scale: 1.08, filter: "blur(18px)" } : { opacity: 1, scale: 1, filter: "blur(0px)" }}
+                transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}>
+      <LockClock />
+
+      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 160, damping: 20, delay: 0.2 }}
+                  className="w-full max-w-xs">
+        <motion.form onSubmit={submit} animate={shake} className="flex w-full flex-col items-center gap-3">
+          <motion.div whileHover={{ scale: 1.04 }}
+                      className="glass rim mb-1 grid size-24 place-items-center rounded-full text-white">
+            <AnimatePresence mode="wait">
+              {username ? (
+                <motion.span key="letter" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }}
+                             className="text-4xl font-semibold uppercase">{username[0]}</motion.span>
+              ) : (
+                <motion.span key="icon" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }}>
+                  <UserRound className="size-11" strokeWidth={1.5} />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          <label htmlFor="username" className="sr-only">Tên đăng nhập</label>
+          <input id="username" name="username" autoComplete="username" autoFocus required placeholder="Tên đăng nhập"
+                 value={username} onChange={(e) => setUsername(e.target.value)}
+                 className="glass rim h-10 w-full rounded-full px-5 text-center text-[15px] text-white outline-none placeholder:text-white/65 focus:ring-3 focus:ring-white/35" />
+
+          <div className="relative w-full">
+            <label htmlFor="password" className="sr-only">Mật khẩu</label>
+            <input ref={password} id="password" name="password" type="password" autoComplete="current-password" required
+                   placeholder="Nhập mật khẩu"
+                   className="glass rim h-10 w-full rounded-full pr-12 pl-5 text-center text-[15px] text-white outline-none placeholder:text-white/65 focus:ring-3 focus:ring-white/35" />
+            <motion.button type="submit" disabled={busy} aria-label="Đăng nhập" whileTap={{ scale: 0.85 }}
+                           className={cn("absolute top-1/2 right-1.5 grid size-7 -translate-y-1/2 place-items-center rounded-full bg-white/30 text-white transition-colors hover:bg-white/45",
+                             busy && "bg-white/20")}>
+              {busy ? <LoaderCircle className="size-4 animate-spin" /> : <ArrowRight className="size-4" strokeWidth={2.5} />}
+            </motion.button>
+          </div>
+
+          <div className="h-6">
+            <AnimatePresence>
+              {error && (
+                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                          className="text-on-wallpaper text-center text-sm font-medium">
+                  {error}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.form>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+                  className="text-on-wallpaper flex items-center gap-2 text-sm opacity-85">
+        <ChartNoAxesCombined className="size-4" />
+        <span className="font-semibold">EduGuard AI</span>
+        <span className="opacity-70">· Phát hiện sớm, can thiệp kịp thời</span>
+      </motion.div>
+    </motion.div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col">
-        {/* Hai quầng sáng mờ chuyển động chậm — tạo chiều sâu mà không kéo sự chú ý khỏi nội dung. */}
-        <motion.div className="absolute -right-24 -top-24 size-96 rounded-full bg-white/10 blur-3xl"
-                    animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 8, repeat: Infinity }} />
-        <motion.div className="absolute -bottom-32 -left-16 size-96 rounded-full bg-white/10 blur-3xl"
-                    animate={{ scale: [1.1, 1, 1.1] }} transition={{ duration: 10, repeat: Infinity }} />
-
-        <div className="relative flex items-center gap-2.5">
-          <div className="grid size-10 place-items-center rounded-xl bg-white/15"><ChartNoAxesCombined /></div>
-          <span className="text-lg font-semibold">EduGuard AI</span>
-        </div>
-
-        <div className="relative mt-auto max-w-md">
-          <h1 className="text-4xl font-bold leading-tight tracking-tight">
-            Phát hiện sớm, can thiệp kịp thời.
-          </h1>
-          <p className="mt-3 text-primary-foreground/80">
-            Hệ thống giúp cố vấn học tập biết sinh viên nào cần được quan tâm — và vì sao.
-          </p>
-          <div className="mt-10 space-y-5">
-            {HIGHLIGHTS.map((item, i) => (
-              <motion.div key={item.title} className="flex gap-3"
-                          initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.2 + i * 0.12 }}>
-                <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-white/15">
-                  <item.icon className="size-4" />
-                </div>
-                <div>
-                  <div className="font-medium">{item.title}</div>
-                  <div className="text-sm text-primary-foreground/75">{item.text}</div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-sm">
-          <h2 className="text-2xl font-semibold tracking-tight">Đăng nhập</h2>
-          <p className="mb-8 mt-1 text-sm text-muted-foreground">Dùng tài khoản được nhà trường cấp.</p>
-          <Suspense><LoginForm /></Suspense>
-        </div>
-      </div>
+    <div className="h-dvh overflow-y-auto">
+      <Suspense><LoginForm /></Suspense>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 """
-Tám thực thể dữ liệu, khớp đúng data/schema.sql.
+Tám thực thể dữ liệu, khớp đúng database/schema.sql.
 
 Chỉ khai báo cấu trúc bảng và những luật gắn liền với dữ liệu: phân quyền trên
 từng sinh viên, nhãn hiển thị. Truy vấn và nghiệp vụ nằm ở services/.

@@ -161,8 +161,8 @@ def counselors(db: Session) -> list[Counselor]:
 
 
 def add_meeting(db: Session, student: Student, data: dict) -> MeetingLog:
-    meeting = MeetingLog(student_id=student.student_id, **data)
-    db.add(meeting)
+    meeting = MeetingLog(**data)
+    student.meetings.append(meeting)
     db.commit()
     return meeting
 
@@ -180,9 +180,9 @@ def add_intervention(db: Session, student: Student, data: dict) -> Intervention:
     # Gắn với lần dự đoán mới nhất để truy được can thiệp phát sinh từ cảnh
     # báo nào, và về sau đánh giá được là có hiệu quả hay không.
     latest = student.predictions[-1] if student.predictions else None
-    item = Intervention(student_id=student.student_id, prediction_id=latest.prediction_id if latest else None,
+    item = Intervention(prediction_id=latest.prediction_id if latest else None,
                         **{**data, "title": data["title"].strip()})
-    db.add(item)
+    student.interventions.append(item)
     db.commit()
     return item
 
@@ -195,3 +195,113 @@ def set_intervention_status(db: Session, item: Intervention, status: str) -> Int
     item.completed_at = datetime.utcnow() if status == "completed" else None
     db.commit()
     return item
+
+
+def update_meeting(db: Session, meeting: MeetingLog, data: dict) -> MeetingLog:
+    for name, value in data.items():
+        setattr(meeting, name, value)
+    db.commit()
+    return meeting
+
+
+def delete_meeting(db: Session, meeting: MeetingLog) -> None:
+    """Việc can thiệp phát sinh từ buổi gặp được giữ lại, chỉ bỏ liên kết."""
+    for item in db.scalars(select(Intervention).where(Intervention.meeting_id == meeting.meeting_id)):
+        item.meeting_id = None
+    # Gỡ khỏi danh sách của sinh viên (delete-orphan xoá bản ghi), để hồ sơ đã nạp trong phiên không giữ bản cũ.
+    meeting.student.meetings.remove(meeting)
+    db.commit()
+
+
+def update_intervention(db: Session, item: Intervention, data: dict) -> Intervention:
+    if not (data.get("title") or "").strip():
+        raise ServiceError("Tiêu đề việc cần làm không được để trống.")
+    status = data.pop("status", item.status)
+    for name, value in {**data, "title": data["title"].strip()}.items():
+        setattr(item, name, value)
+    if status != item.status:
+        return set_intervention_status(db, item, status)
+    db.commit()
+    return item
+
+
+def delete_intervention(db: Session, item: Intervention) -> None:
+    item.student.interventions.remove(item)
+    db.commit()
+
+
+# ===========================================================================
+# Lịch sử chỉ số — mỗi lát cắt là bộ ba bản ghi ghi cùng lúc
+# ===========================================================================
+
+def _snapshots(student: Student) -> list[tuple]:
+    """
+    Các lát cắt (kết quả học tập, chuyên cần, tương tác) theo thứ tự thời gian.
+
+    Ba bảng không có khoá nối với nhau; chúng luôn được ghi cùng nhau (nhập tay,
+    nhập file, sinh dữ liệu mẫu) nên bản ghi thứ i của mỗi bảng thuộc cùng một lát cắt.
+    Số dòng lệch nhau nghĩa là dữ liệu đã bị sửa ngoài ứng dụng: khi đó không ghép
+    đoán mà chỉ trả phần kết quả học tập.
+    """
+    academic = student.academic_results
+    paired = lambda rows: rows if len(rows) == len(academic) else [None] * len(academic)  # noqa: E731
+    return list(zip(academic, paired(student.attendances), paired(student.interactions)))
+
+
+def _snapshot_rows(student: Student, result_id: int) -> tuple:
+    """Lát cắt xác định bằng result_id của bảng kết quả học tập."""
+    for rows in _snapshots(student):
+        if rows[0].result_id == result_id:
+            return rows
+    raise ServiceError("Không tìm thấy bản ghi chỉ số.")
+
+
+def metrics_history(student: Student) -> list[dict]:
+    history = []
+    for academic, attendance, interaction in reversed(_snapshots(student)):
+        history.append({
+            "result_id": academic.result_id,
+            "semester": academic.semester,
+            "credits_registered": academic.credits_registered,
+            "total_sessions": attendance.total_sessions if attendance else None,
+            "absent_sessions": attendance.absent_sessions if attendance else None,
+            "recorded_at": academic.created_at.isoformat(),
+            **features_from(academic, attendance, interaction),
+        })
+    return history
+
+
+def update_metrics(db: Session, student: Student, result_id: int, data: dict) -> None:
+    """Sửa lỗi nhập liệu trên một lát cắt đã có. Dự đoán cũ giữ nguyên — nó phản ánh số liệu lúc chạy."""
+    if data["absent_sessions"] > data["total_sessions"]:
+        raise ServiceError("Số buổi vắng không thể lớn hơn tổng số buổi.")
+    academic, attendance, interaction = _snapshot_rows(student, result_id)
+
+    for name in ("semester", "gpa", "failed_subjects", "credits_completed", "credits_registered"):
+        setattr(academic, name, data[name])
+    if attendance:
+        for name in ("attendance_rate", "total_sessions", "absent_sessions"):
+            setattr(attendance, name, data[name])
+    if interaction:
+        for name in ("login_count", "assignment_submitted", "assignment_missing", "forum_posts", "video_views",
+                     "learning_hours"):
+            setattr(interaction, name, data[name])
+    db.commit()
+
+
+def delete_metrics(db: Session, student: Student, result_id: int) -> None:
+    academic, attendance, interaction = _snapshot_rows(student, result_id)
+    student.academic_results.remove(academic)
+    if attendance:
+        student.attendances.remove(attendance)
+    if interaction:
+        student.interactions.remove(interaction)
+    db.commit()
+
+
+def delete_prediction(db: Session, prediction: Prediction) -> None:
+    """Việc can thiệp phát sinh từ lần dự đoán này được giữ lại, chỉ bỏ liên kết."""
+    for item in db.scalars(select(Intervention).where(Intervention.prediction_id == prediction.prediction_id)):
+        item.prediction_id = None
+    prediction.student.predictions.remove(prediction)
+    db.commit()

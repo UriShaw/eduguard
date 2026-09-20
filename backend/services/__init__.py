@@ -2,6 +2,7 @@
 Tầng Model — phần nghiệp vụ.
 
     students.py     hồ sơ sinh viên, chỉ số học tập, gặp mặt, can thiệp
+    accounts.py     tài khoản đăng nhập, mật khẩu, cán bộ tư vấn
     predictions.py  dự đoán, dự đoán hàng loạt, mô phỏng, gợi ý can thiệp, xu hướng
     analytics.py    tổng quan, cảnh báo sớm
     reports.py      xuất báo cáo Excel, nhập dữ liệu từ file

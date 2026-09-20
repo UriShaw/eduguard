@@ -13,7 +13,8 @@ from controllers.dependencies import (
     issue_token,
 )
 from models import User
-from models.schemas import LoginIn, UserOut
+from models.schemas import LoginIn, PasswordChangeIn, UserOut
+from services import accounts
 
 router = APIRouter(prefix="/api/auth", tags=["Xác thực"])
 logger = logging.getLogger("auth")
@@ -50,3 +51,9 @@ def logout(response: Response):
 @router.get("/me", response_model=UserOut)
 def me(user: CurrentUser):
     return user
+
+
+@router.post("/password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(body: PasswordChangeIn, user: CurrentUser, db: DB):
+    """Mọi vai trò tự đổi được mật khẩu của mình; phải nhập đúng mật khẩu hiện tại."""
+    accounts.change_password(db, user, body.current_password, body.new_password)

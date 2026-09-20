@@ -5,13 +5,15 @@ Kiến trúc MVC:
     models/       M  dữ liệu: kết nối CSDL, thực thể ORM, lược đồ vào/ra
     services/     M  nghiệp vụ: sinh viên, dự đoán, thống kê, báo cáo, machine learning
     controllers/  C  route API, xác thực, phân quyền
-    data/            lược đồ MySQL, dữ liệu huấn luyện, sinh dữ liệu mẫu
+    data/            dữ liệu huấn luyện (dataset.csv)
+    ../database/     cấu hình kết nối MySQL (.env), lược đồ schema.sql, dữ liệu mẫu seed.sql
     ../frontend/  V  giao diện Next.js
 
 Cách dùng (trong thư mục backend, đã kích hoạt môi trường ảo):
+    python main.py init-db            tạo lại CSDL từ ../database/schema.sql (XOÁ dữ liệu cũ)
     python main.py serve              chạy API ở http://127.0.0.1:8000
     python main.py train              huấn luyện model
-    python main.py seed [--reset]     sinh dữ liệu mẫu
+    python main.py seed               nạp dữ liệu mẫu từ ../database/seed.sql
     python main.py predict-all        dự đoán lại cho mọi sinh viên có chỉ số mới
 """
 import argparse
@@ -54,11 +56,12 @@ def main() -> None:
     serve.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")))
     serve.add_argument("--reload", action="store_true", help="tự nạp lại khi sửa mã")
 
+    init_db = commands.add_parser("init-db", help="tạo lại CSDL từ database/schema.sql")
+    init_db.add_argument("--yes", action="store_true", help="không hỏi xác nhận")
+
     commands.add_parser("train", help="huấn luyện và lưu model")
 
-    seed = commands.add_parser("seed", help="sinh dữ liệu mẫu")
-    seed.add_argument("--students", type=int, default=500)
-    seed.add_argument("--reset", action="store_true", help="xoá dữ liệu cũ trước khi sinh")
+    commands.add_parser("seed", help="nạp dữ liệu mẫu từ database/seed.sql")
 
     commands.add_parser("predict-all", help="dự đoán lại cho sinh viên có chỉ số mới")
 
@@ -68,6 +71,13 @@ def main() -> None:
         import uvicorn
 
         uvicorn.run("main:app", host="127.0.0.1", port=args.port, reload=args.reload)
+
+    elif args.command == "init-db":
+        from models.database import init_schema
+
+        if not args.yes and input("Mọi dữ liệu cũ trong CSDL sẽ bị XOÁ. Tiếp tục? [y/N] ").lower() != "y":
+            return
+        print(f"Đã tạo lại CSDL {init_schema()}. Tiếp theo: python main.py seed")
 
     elif args.command == "train":
         from services import ml
@@ -81,9 +91,33 @@ def main() -> None:
             print("CẢNH BÁO: recall dưới 0.70 — model bỏ sót hơn 30% sinh viên thực sự có nguy cơ.")
 
     elif args.command == "seed":
-        from data.seed import run
+        import pymysql
+        from pymysql.constants import CLIENT
+        from sqlalchemy import make_url
+        from models.database import database_url, DATABASE_DIR
 
-        run(args.students, args.reset)
+        seed_path = DATABASE_DIR / "seed.sql"
+        if not seed_path.exists():
+            print(f"Không tìm thấy {seed_path}")
+            return
+        sql = seed_path.read_text(encoding="utf-8")
+        url = make_url(database_url())
+        connection = pymysql.connect(
+            host=url.host or "localhost", port=url.port or 3306,
+            user=url.username or "root", password=url.password or "",
+            charset="utf8mb4", client_flag=CLIENT.MULTI_STATEMENTS,
+        )
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                while cursor.nextset():
+                    pass
+            connection.commit()
+        finally:
+            connection.close()
+        print("Đã nạp dữ liệu mẫu từ database/seed.sql."
+              "\nTài khoản: admin/admin123 · gv01…gv05/giangvien123 · sv01/sinhvien123"
+              "\nTiếp theo: python main.py train && python main.py predict-all")
 
     elif args.command == "predict-all":
         from models import SessionLocal

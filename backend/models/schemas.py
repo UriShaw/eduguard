@@ -34,6 +34,32 @@ class UserOut(ORM):
     student_id: int | None
 
 
+class AccountIn(BaseModel):
+    """Tạo hoặc sửa tài khoản. Để trống password khi sửa nghĩa là giữ mật khẩu cũ."""
+    username: str = Field(min_length=1, max_length=50, pattern=r"^[A-Za-z0-9_.-]+$")
+    full_name: str = Field(min_length=1, max_length=150)
+    email: EmailStr | Literal[""] | None = None
+    role: Role
+    student_id: int | None = None
+    is_active: bool = True
+    password: str | None = Field(default=None, max_length=128)
+
+
+class AccountOut(UserOut):
+    email: str | None
+    is_active: bool
+    created_at: datetime
+
+
+class PasswordResetIn(BaseModel):
+    password: str = Field(min_length=6, max_length=128)
+
+
+class PasswordChangeIn(BaseModel):
+    current_password: str = Field(min_length=1)
+    new_password: str = Field(min_length=6, max_length=128)
+
+
 # ----- Chỉ số -----
 
 class Features(BaseModel):
@@ -156,5 +182,26 @@ class InterventionOut(ORM):
     is_overdue: bool
 
 
+class InterventionUpdate(InterventionIn):
+    status: Literal["not_started", "in_progress", "completed"]
+
+
 class StatusIn(BaseModel):
     status: Literal["not_started", "in_progress", "completed"]
+
+
+# ----- Cán bộ tư vấn -----
+
+class CounselorIn(BaseModel):
+    full_name: str = Field(min_length=1, max_length=150)
+    title: str | None = Field(default=None, max_length=150)
+    email: EmailStr | Literal[""] | None = None
+    phone: str | None = Field(default=None, max_length=20)
+
+
+class CounselorOut(ORM):
+    counselor_id: int
+    full_name: str
+    title: str | None
+    email: str | None
+    phone: str | None
